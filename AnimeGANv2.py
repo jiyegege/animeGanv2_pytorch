@@ -50,7 +50,7 @@ class AnimeGANv2(object):
                                       batch_size=wandb.config.batch_size,
                                        pin_memory=True)
         self.dataset_num = imageDataSet.__len__()
-        self.p_model = Vgg19()
+        self.p_model = Vgg19().to(self.device)
 
         print()
         print("##### Information #####")
@@ -159,7 +159,7 @@ class AnimeGANv2(object):
                     if epoch < wandb.config.init_epoch:
                         generated.zero_grad()
                         init_loss = self.init_train_step(generated, init_optim, epoch, real)
-                        init_mean_loss.append(init_loss)
+                        init_mean_loss.append(init_loss.item())
                         tbar.set_description('Epoch %d' % epoch)
                         tbar.set_postfix(init_v_loss=init_loss.item(), mean_v_loss=np.mean(init_mean_loss))
                         tbar.update()
@@ -176,7 +176,7 @@ class AnimeGANv2(object):
                         # Update G network
                         g_loss = self.g_train_step(real, anime_gray, generated, discriminator, G_optim, epoch)
 
-                        mean_loss.append([d_loss, g_loss])
+                        mean_loss.append([d_loss.item(), g_loss.item()])
                         tbar.set_description('Epoch %d' % epoch)
                         if j == wandb.config.training_rate:
                             tbar.set_postfix(d_loss=d_loss.item(), g_loss=g_loss.item(),
