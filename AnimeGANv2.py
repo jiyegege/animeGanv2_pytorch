@@ -161,7 +161,7 @@ class AnimeGANv2(object):
                         init_loss = self.init_train_step(generated, init_optim, epoch, real)
                         init_mean_loss.append(init_loss)
                         tbar.set_description('Epoch %d' % epoch)
-                        tbar.set_postfix(init_v_loss=init_loss.numpy(), mean_v_loss=np.mean(init_mean_loss))
+                        tbar.set_postfix(init_v_loss=init_loss.item(), mean_v_loss=np.mean(init_mean_loss))
                         tbar.update()
                         if (step + 1) % 200 == 0:
                             init_mean_loss.clear()
@@ -179,11 +179,11 @@ class AnimeGANv2(object):
                         mean_loss.append([d_loss, g_loss])
                         tbar.set_description('Epoch %d' % epoch)
                         if j == wandb.config.training_rate:
-                            tbar.set_postfix(d_loss=d_loss.numpy(), g_loss=g_loss.numpy(),
+                            tbar.set_postfix(d_loss=d_loss.item(), g_loss=g_loss.item(),
                                              mean_d_loss=np.mean(mean_loss, axis=0)[0],
                                              mean_g_loss=np.mean(mean_loss, axis=0)[1])
                         else:
-                            tbar.set_postfix(g_loss=g_loss.numpy(), mean_g_loss=np.mean(mean_loss, axis=0)[1])
+                            tbar.set_postfix(g_loss=g_loss.item(), mean_g_loss=np.mean(mean_loss, axis=0)[1])
                         tbar.update()
 
                         if (step + 1) % 200 == 0:

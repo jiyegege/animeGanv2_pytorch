@@ -73,10 +73,10 @@ def discriminator_loss(loss_func, real, gray, fake, real_blur, step, writer, rea
 
 
 def gram_matrix(input):
-    _, c, h, w = input.size()
-    reshape_input = input.view(c, h * w)
+    b, c, h, w = input.size()
+    reshape_input = input.view(b * c, h * w)
     G = torch.mm(reshape_input, reshape_input.t())
-    return G
+    return G.div(b * c * h * w)
 
 
 def con_loss(pre_train_model: nn.Module, real, fake):
@@ -112,9 +112,7 @@ def color_loss(real, fake):
 def total_variation_loss(inputs):
     dh = inputs[:, :-1, ...] - inputs[:, 1:, ...]
     dw = inputs[:, :, :-1, ...] - inputs[:, :, 1:, ...]
-    size_dh = dh.size()
-    size_dw = dw.size()
-    return nn.MSELoss(dh) / size_dh + nn.MSELoss(dw) / size_dw
+    return torch.mean(torch.abs(dh)) + torch.mean(torch.abs(dw))
 
 
 def rgb2yuv(rgb):
