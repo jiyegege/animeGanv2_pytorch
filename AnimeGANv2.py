@@ -73,7 +73,7 @@ class AnimeGANv2(object):
     ##################################################################################
 
     def generator(self):
-        G = Generator().to(self.device)
+        G = Generator()
         return G
 
     ##################################################################################
@@ -81,7 +81,7 @@ class AnimeGANv2(object):
     ##################################################################################
 
     def discriminator(self):
-        D = Discriminator(self.ch, 3, self.n_dis, wandb.config.sn).to(self.device)
+        D = Discriminator(self.ch, 3, self.n_dis, wandb.config.sn)
         return D
 
     ##################################################################################
@@ -112,8 +112,8 @@ class AnimeGANv2(object):
 
     def train(self):
         """ Define Generator, Discriminator """
-        generated = self.generator()
-        discriminator = self.discriminator()
+        generated = self.generator().to(self.device)
+        discriminator = self.discriminator().to(self.device)
 
         # summary writer
         self.writer = SummaryWriter(self.log_dir + '/' + self.model_dir)
@@ -205,9 +205,11 @@ class AnimeGANv2(object):
                 val_images = []
                 for i, sample_file in enumerate(val_files):
                     print('val: ' + str(i) + sample_file)
-                    sample_image = np.asarray(load_test_data(sample_file, self.img_size))
-                    test_real = sample_image
-                    test_generated_predict = generated.predict(test_real)
+                    generated.eval()
+                    with torch.no_grad():
+                        sample_image = np.asarray(load_test_data(sample_file, self.img_size))
+                        test_real = sample_image
+                        test_generated_predict = generated(torch.from_numpy(test_real).to(self.device)).cpu().numpy()
                     # save_images(test_real, save_path + '{:03d}_a.jpg'.format(i), None)
                     # save_images(test_generated_predict, save_path + '{:03d}_b.jpg'.format(i), None)
                     val_images.append(wandb.Image(test_generated_predict, caption="Name:{}, epoch:{}".format(i, epoch)))
