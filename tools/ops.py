@@ -3,6 +3,8 @@ import torch.nn.functional as F
 import torchvision
 from torch import nn
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 def generator_loss(loss_func, fake):
     fake_loss = 0
     if loss_func == 'wgan-gp' or loss_func == 'wgan-lp':
@@ -120,6 +122,6 @@ def rgb2yuv(rgb):
     # from  Wikipedia
     A = torch.tensor([[0.299, -0.14714119, 0.61497538],
                       [0.587, -0.28886916, -0.51496512],
-                      [0.114, 0.43601035, -0.10001026]])
+                      [0.114, 0.43601035, -0.10001026]]).to(device)
     yuv = torch.tensordot(rgb_, A, dims=([rgb.ndim - 3], [0]))
     return yuv

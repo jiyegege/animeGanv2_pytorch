@@ -152,12 +152,9 @@ class AnimeGANv2(object):
             with tqdm(range(total_step)) as tbar:
                 for step, data in enumerate(self.data_loader, 0):
                     real = data[0].to(self.device)
-                    anime = data[1].to(self.device)
-                    anime_gray = data[2].to(self.device)
-                    anime_smooth = data[3].to(self.device)
-
+                    generated.train()
                     if epoch < wandb.config.init_epoch:
-                        generated.zero_grad()
+                        init_optim.zero_grad()
                         init_loss = self.init_train_step(generated, init_optim, epoch, real)
                         init_mean_loss.append(init_loss.item())
                         tbar.set_description('Epoch %d' % epoch)
@@ -166,14 +163,17 @@ class AnimeGANv2(object):
                         if (step + 1) % 200 == 0:
                             init_mean_loss.clear()
                     else:
-                        generated.zero_grad()
+                        anime = data[1].to(self.device)
+                        anime_gray = data[2].to(self.device)
+                        anime_smooth = data[3].to(self.device)
                         if j == wandb.config.training_rate:
-                            discriminator.zero_grad()
+                            D_optim.zero_grad()
                             # Update D network
                             d_loss = self.d_train_step(real, anime, anime_gray, anime_smooth,
                                                        generated, discriminator, D_optim, epoch)
 
                         # Update G network
+                        G_optim.zero_grad()
                         g_loss = self.g_train_step(real, anime_gray, generated, discriminator, G_optim, epoch)
 
                         mean_loss.append([d_loss.item(), g_loss.item()])
