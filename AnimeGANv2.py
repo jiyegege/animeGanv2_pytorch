@@ -295,7 +295,7 @@ class AnimeGANv2(object):
         d_loss.backward()
         D_optim.step()
 
-        self.writer.add_scalar("Discriminator_loss", d_loss, epoch)
+        self.writer.add_scalar("Discriminator_loss", d_loss.item(), epoch)
         return d_loss
 
     @property
