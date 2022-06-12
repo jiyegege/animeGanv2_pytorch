@@ -154,9 +154,7 @@ class AnimeGANv2(object):
                     real = data[0].to(self.device)
                     generated.train()
                     if epoch < wandb.config.init_epoch:
-                        init_optim.zero_grad()
-                        init_loss = self.init_train_step(generated, init_optim, epoch, real)
-                        init_mean_loss.append(init_loss.item())
+                        init_loss = self.init_step(epoch, generated, init_mean_loss, init_optim, real)
                         tbar.set_description('Epoch %d' % epoch)
                         tbar.set_postfix(init_v_loss=init_loss.item(), mean_v_loss=np.mean(init_mean_loss))
                         tbar.update()
@@ -166,15 +164,13 @@ class AnimeGANv2(object):
                         anime = data[1].to(self.device)
                         anime_gray = data[2].to(self.device)
                         anime_smooth = data[3].to(self.device)
+                        fake_image = generated(real)
                         if j == wandb.config.training_rate:
-                            D_optim.zero_grad()
-                            # Update D network
-                            d_loss = self.d_train_step(real, anime, anime_gray, anime_smooth,
-                                                       generated, discriminator, D_optim, epoch)
+                            d_loss = self.d_train_step(D_optim, anime, anime_gray, anime_smooth, discriminator, epoch,
+                                                       fake_image)
 
                         # Update G network
-                        G_optim.zero_grad()
-                        g_loss = self.g_train_step(real, anime_gray, generated, discriminator, G_optim, epoch)
+                        g_loss = self.g_train_step(G_optim, anime_gray, discriminator, epoch, fake_image, real)
 
                         mean_loss.append([d_loss.item(), g_loss.item()])
                         tbar.set_description('Epoch %d' % epoch)
@@ -222,57 +218,29 @@ class AnimeGANv2(object):
                 os.makedirs(save_model_path)
             torch.save(generated, os.path.join(save_model_path, 'generated_' + self.dataset_name + '.pth'))
 
-    def init_train_step(self, generated, init_optim, epoch, real):
-
-        generator_images = generated(real)
-        # init pharse
-        init_c_loss = con_loss(self.p_model, real, generator_images)
-        init_loss = wandb.config.con_weight * init_c_loss
-        init_loss.backward()
-        init_optim.step()
-
-        # wandb.log("G_init", init_loss.numpy(), step=epoch)
-        self.writer.add_scalar('G_init_loss', init_loss.item(), epoch)
-
-        return init_loss
-
-    def g_train_step(self, real, anime_gray, generated,
-                     discriminator, G_optim, epoch):
-
-        fake_image = generated(real)
-        generated_logit = discriminator(fake_image)
+    def g_train_step(self, G_optim, anime_gray, discriminator, epoch, fake_image, real):
+        G_optim.zero_grad()
+        generated_logit = discriminator(fake_image).detach()
         # gan
         c_loss, s_loss = con_sty_loss(self.p_model, real, anime_gray, fake_image)
         tv_loss = wandb.config.tv_weight * total_variation_loss(fake_image)
         col_loss = color_loss(real, fake_image)
         t_loss = wandb.config.con_weight * c_loss + wandb.config.sty_weight * s_loss + col_loss * wandb.config.color_weight + tv_loss
-
         g_loss = wandb.config.g_adv_weight * generator_loss(wandb.config.gan_type, generated_logit)
         Generator_loss = t_loss + g_loss
-
         Generator_loss.backward()
         G_optim.step()
-
-        # wandb.log("Generator_loss", Generator_loss.numpy(), step=epoch)
-        # wandb.log("G_con_loss", c_loss.numpy(), step=epoch)
-        # wandb.log("G_sty_loss", s_loss.numpy(), step=epoch)
-        # wandb.log("G_color_loss", col_loss.numpy(), step=epoch)
-        # wandb.log("G_gan_loss", g_loss.numpy(), step=epoch)
-        # wandb.log("G_pre_model_loss", t_loss.numpy(), step=epoch)
-
         self.writer.add_scalar("Generator_loss", Generator_loss.item(), epoch)
         self.writer.add_scalar("G_con_loss", c_loss.item(), epoch)
         self.writer.add_scalar("G_sty_loss", s_loss.item(), epoch)
         self.writer.add_scalar("G_color_loss", col_loss.item(), epoch)
-
         self.writer.add_scalar("G_gan_loss", g_loss.item(), epoch)
         self.writer.add_scalar("G_pre_model_loss", t_loss.item(), epoch)
-        return Generator_loss
+        return g_loss
 
-    def d_train_step(self, real, anime, anime_gray, anime_smooth, generated, discriminator,
-                     D_optim, epoch):
-
-        fake_image = generated(real)
+    def d_train_step(self, D_optim, anime, anime_gray, anime_smooth, discriminator, epoch, fake_image):
+        D_optim.zero_grad()
+        # Update D network
         d_anime_logit = discriminator(anime)
         d_anime_gray_logit = discriminator(anime_gray)
         d_smooth_logit = discriminator(anime_smooth)
@@ -283,8 +251,8 @@ class AnimeGANv2(object):
             GP = self.gradient_panalty(real=anime, fake=fake_image, discriminator=discriminator)
         else:
             GP = 0.0
-
-        d_loss = wandb.config.d_adv_weight * discriminator_loss(wandb.config.gan_type, d_anime_logit,
+        d_loss = wandb.config.d_adv_weight * discriminator_loss(wandb.config.gan_type,
+                                                                d_anime_logit,
                                                                 d_anime_gray_logit,
                                                                 generated_logit,
                                                                 d_smooth_logit, epoch, self.writer,
@@ -294,9 +262,21 @@ class AnimeGANv2(object):
                                                                 wandb.config.real_blur_loss_weight) + GP
         d_loss.backward()
         D_optim.step()
-
         self.writer.add_scalar("Discriminator_loss", d_loss.item(), epoch)
         return d_loss
+
+    def init_step(self, epoch, generated, init_mean_loss, init_optim, real):
+        init_optim.zero_grad()
+        generator_images = generated(real)
+        # init pharse
+        init_c_loss = con_loss(self.p_model, real, generator_images)
+        init_loss = wandb.config.con_weight * init_c_loss
+        init_loss.backward()
+        init_optim.step()
+        # wandb.log("G_init", init_loss.numpy(), step=epoch)
+        self.writer.add_scalar('G_init_loss', init_loss.item(), epoch)
+        init_mean_loss.append(init_loss.item())
+        return init_loss
 
     @property
     def model_dir(self):
