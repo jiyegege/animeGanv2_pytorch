@@ -50,7 +50,7 @@ class AnimeGANv2(object):
                                       batch_size=wandb.config.batch_size,
                                        pin_memory=True)
         self.dataset_num = imageDataSet.__len__()
-        self.p_model = Vgg19().to(self.device)
+        self.p_model = Vgg19().to(self.device).eval()
 
         print()
         print("##### Information #####")
@@ -164,13 +164,16 @@ class AnimeGANv2(object):
                         anime = data[1].to(self.device)
                         anime_gray = data[2].to(self.device)
                         anime_smooth = data[3].to(self.device)
-                        fake_image = generated(real)
+
                         if j == wandb.config.training_rate:
+                            fake_image = generated(real).detach()
                             d_loss = self.d_train_step(D_optim, anime, anime_gray, anime_smooth, discriminator, epoch,
                                                        fake_image)
 
                         # Update G network
-                        g_loss = self.g_train_step(G_optim, anime_gray, discriminator, epoch, fake_image, real)
+                        fake_image = generated(real)
+                        d_fake_image = discriminator(fake_image)
+                        g_loss = self.g_train_step(G_optim, anime_gray, d_fake_image, epoch, fake_image, real)
 
                         mean_loss.append([d_loss.item(), g_loss.item()])
                         tbar.set_description('Epoch %d' % epoch)
@@ -218,9 +221,8 @@ class AnimeGANv2(object):
                 os.makedirs(save_model_path)
             torch.save(generated, os.path.join(save_model_path, 'generated_' + self.dataset_name + '.pth'))
 
-    def g_train_step(self, G_optim, anime_gray, discriminator, epoch, fake_image, real):
+    def g_train_step(self, G_optim, anime_gray, generated_logit, epoch, fake_image, real):
         G_optim.zero_grad()
-        generated_logit = discriminator(fake_image).detach()
         # gan
         c_loss, s_loss = con_sty_loss(self.p_model, real, anime_gray, fake_image)
         tv_loss = wandb.config.tv_weight * total_variation_loss(fake_image)
