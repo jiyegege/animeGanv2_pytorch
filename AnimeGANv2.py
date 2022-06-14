@@ -207,13 +207,16 @@ class AnimeGANv2(object):
                     generated.eval()
                     with torch.no_grad():
                         sample_image = np.asarray(load_test_data(sample_file, self.img_size))
-                        test_real = sample_image
-                        test_generated_predict = generated(torch.from_numpy(test_real).to(self.device)).cpu().numpy()
+                        test_real = torch.from_numpy(sample_image).to(self.device)
+                        test_generated_predict = generated(test_real).cpu().numpy()
+                        test_generated_predict = np.transpose(test_generated_predict, (0, 2, 3, 1))
+                        test_generated_predict = np.squeeze(test_generated_predict, axis=0)
                     # save_images(test_real, save_path + '{:03d}_a.jpg'.format(i), None)
                     # save_images(test_generated_predict, save_path + '{:03d}_b.jpg'.format(i), None)
-                    val_images.append(wandb.Image(test_generated_predict, caption="Name:{}, epoch:{}".format(i, epoch)))
                     if i == 0 or i == 26 or i == 5:
-                        self.writer.add_image('val_data_' + str(i), test_generated_predict, epoch)
+                        val_images.append(
+                            wandb.Image(test_generated_predict, caption="Name:{}, epoch:{}".format(i, epoch)))
+                        # self.writer.add_image('val_data_' + str(i), test_generated_predict, epoch)
                 wandb.log({'val_data': val_images}, step=epoch)
         if not self.hyperparameters:
             save_model_path = 'save_model'

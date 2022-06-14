@@ -10,6 +10,7 @@ def load_test_data(image_path, size):
     img = cv2.imread(image_path).astype(np.float32)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = preprocessing(img, size)
+    img = np.transpose(img, (1, 2, 0))
     img = np.expand_dims(img, axis=0)
     return img
 
