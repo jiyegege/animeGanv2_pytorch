@@ -23,7 +23,10 @@ from torch.utils.tensorboard import SummaryWriter
 class AnimeGANv2(object):
     def __init__(self, args):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.hyperparameters = args.hyperparameters
+        if args.hyperparameters.lower() == 'true':
+            self.hyperparameters = True
+        else:
+            self.hyperparameters = False
 
         config_dict = yaml.safe_load(open(args.config_path, 'r'))
         # Initialize a new wandb run
