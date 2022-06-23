@@ -16,20 +16,20 @@ def load_test_data(image_path, size):
 
 
 def preprocessing(img, size):
-    h, w = img.shape[:2]
-    if h <= size[0]:
-        h = size[0]
-    else:
-        x = h % 32
-        h = h - x
-
-    if w < size[1]:
-        w = size[1]
-    else:
-        y = w % 32
-        w = w - y
-    # the cv2 resize func : dsize format is (W ,H)
-    img = cv2.resize(img, (w, h))
+    # h, w = img.shape[:2]
+    # if h <= size[0]:
+    #     h = size[0]
+    # else:
+    #     x = h % 32
+    #     h = h - x
+    #
+    # if w < size[1]:
+    #     w = size[1]
+    # else:
+    #     y = w % 32
+    #     w = w - y
+    # # the cv2 resize func : dsize format is (W ,H)
+    # img = cv2.resize(img, (w, h))
     return img / 127.5 - 1.0
 
 

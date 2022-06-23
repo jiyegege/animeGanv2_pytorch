@@ -23,6 +23,8 @@ from torch.utils.tensorboard import SummaryWriter
 class AnimeGANv2(object):
     def __init__(self, args):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        if self.device.type == 'cuda':
+            torch.backends.cudnn.benchmark = True
         if args.hyperparameters.lower() == 'true':
             self.hyperparameters = True
         else:
@@ -169,15 +171,19 @@ class AnimeGANv2(object):
                         anime_smooth = data[3].to(self.device)
 
                         if j == wandb.config.training_rate:
+                            D_optim.zero_grad()
                             fake_image = generated(real).detach()
                             d_loss = self.d_train_step(D_optim, anime, anime_gray, anime_smooth, discriminator, epoch,
                                                        fake_image)
 
                         # Update G network
+                        G_optim.zero_grad()
                         fake_image = generated(real)
                         d_fake_image = discriminator(fake_image)
                         g_loss = self.g_train_step(G_optim, anime_gray, d_fake_image, epoch, fake_image, real)
 
+                        self.writer.add_scalar('d_loss/g_loss',
+                                               {'g_loss': g_loss.item(), 'd_loss': d_loss.item()}, global_step=epoch)
                         mean_loss.append([d_loss.item(), g_loss.item()])
                         tbar.set_description('Epoch %d' % epoch)
                         if j == wandb.config.training_rate:
@@ -220,7 +226,7 @@ class AnimeGANv2(object):
                         val_images.append(
                             wandb.Image(test_generated_predict, caption="Name:{}, epoch:{}".format(i, epoch)))
                         # self.writer.add_image('val_data_' + str(i), test_generated_predict, epoch)
-                wandb.log({'val_data': val_images}, step=epoch)
+                wandb.log({'val_data': val_images, 'epoch': epoch})
         if not self.hyperparameters:
             save_model_path = 'save_model'
             if not os.path.exists(save_model_path):
@@ -228,7 +234,6 @@ class AnimeGANv2(object):
             torch.save(generated, os.path.join(save_model_path, 'generated_' + self.dataset_name + '.pth'))
 
     def g_train_step(self, G_optim, anime_gray, generated_logit, epoch, fake_image, real):
-        G_optim.zero_grad()
         # gan
         c_loss, s_loss = con_sty_loss(self.p_model, real, anime_gray, fake_image)
         tv_loss = wandb.config.tv_weight * total_variation_loss(fake_image)
@@ -244,10 +249,9 @@ class AnimeGANv2(object):
         self.writer.add_scalar("G_color_loss", col_loss.item(), epoch)
         self.writer.add_scalar("G_gan_loss", g_loss.item(), epoch)
         self.writer.add_scalar("G_pre_model_loss", t_loss.item(), epoch)
-        return g_loss
+        return Generator_loss
 
     def d_train_step(self, D_optim, anime, anime_gray, anime_smooth, discriminator, epoch, fake_image):
-        D_optim.zero_grad()
         # Update D network
         d_anime_logit = discriminator(anime)
         d_anime_gray_logit = discriminator(anime_gray)
