@@ -25,6 +25,8 @@ def parse_args():
                         help='Directory name to save the samples on training')
 
     parser.add_argument('--hyperparameters', type=str, default='False')
+    parser.add_argument('--pre_train_weight', type=str, required=False,
+                        help='pre-trained weight path, tensorflow checkpoint directory')
 
     return check_args(parser.parse_args())
 

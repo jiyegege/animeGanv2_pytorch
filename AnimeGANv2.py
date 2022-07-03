@@ -53,9 +53,11 @@ class AnimeGANv2(object):
         imageDataSet = AnimeDataSet(data_dir='./dataset', dataset=self.dataset_name)
         self.data_loader = DataLoader(imageDataSet,
                                       batch_size=wandb.config.batch_size,
-                                       pin_memory=True)
+                                      pin_memory=True)
         self.dataset_num = imageDataSet.__len__()
         self.p_model = Vgg19().to(self.device).eval()
+
+        self.pre_train_weight = args.pre_train_weight
 
         print()
         print("##### Information #####")
@@ -132,14 +134,21 @@ class AnimeGANv2(object):
         # saver to save model
         checkpoint = {'generated': generated.state_dict(),
                       'discriminator': discriminator.state_dict(),
+                      'p_model': self.p_model.state_dict(),
                       'G_optim': G_optim.state_dict(),
                       'D_optim': D_optim.state_dict()
                       }
 
         # restore check-point if it exits
-        state = self.load(self.checkpoint_dir)
+        if self.pre_train_weight:
+            state = self.load_pre_weight(self.pre_train_weight)
+        else:
+            state = self.load(self.checkpoint_dir)
         if state:
-            start_epoch = state['epoch']
+            if self.pre_train_weight:
+                start_epoch = 0
+            else:
+                start_epoch = state['epoch']
             generated.load_state_dict(state['generated'])
             discriminator.load_state_dict(state['discriminator'])
             G_optim.load_state_dict(state['G_optim'])
@@ -226,7 +235,7 @@ class AnimeGANv2(object):
                         val_images.append(
                             wandb.Image(test_generated_predict, caption="Name:{}, epoch:{}".format(i, epoch)))
                         # self.writer.add_image('val_data_' + str(i), test_generated_predict, epoch)
-                wandb.log({'val_data': val_images, 'epoch': epoch})
+                wandb.log({'val_data': val_images}, step=epoch)
         if not self.hyperparameters:
             save_model_path = 'save_model'
             if not os.path.exists(save_model_path):
@@ -311,4 +320,12 @@ class AnimeGANv2(object):
             print(" [!] No checkpoint found...")
             return
         state = torch.load(checkpoint_dir)
+        return state
+
+    def load_pre_weight(self, path):
+        print(" [*] Reading pre-weight...")
+        if not os.path.exists(path):
+            print(" [!] No pre-weight found...")
+            return
+        state = torch.load(path)
         return state
