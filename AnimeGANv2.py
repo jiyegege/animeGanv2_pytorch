@@ -23,8 +23,6 @@ from torch.utils.tensorboard import SummaryWriter
 class AnimeGANv2(object):
     def __init__(self, args):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        if self.device.type == 'cuda':
-            torch.backends.cudnn.benchmark = True
         if args.hyperparameters.lower() == 'true':
             self.hyperparameters = True
         else:
@@ -192,8 +190,6 @@ class AnimeGANv2(object):
                         d_fake_image = discriminator(fake_image)
                         g_loss = self.g_train_step(G_optim, anime_gray, d_fake_image, epoch, fake_image, real)
 
-                        self.writer.add_scalar('d_loss/g_loss',
-                                               {'g_loss': g_loss.item(), 'd_loss': d_loss.item()}, global_step=epoch)
                         mean_loss.append([d_loss.item(), g_loss.item()])
                         tbar.set_description('Epoch %d' % epoch)
                         if j == wandb.config.training_rate:
