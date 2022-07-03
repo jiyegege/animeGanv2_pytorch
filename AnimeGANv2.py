@@ -151,6 +151,7 @@ class AnimeGANv2(object):
                 start_epoch = state['epoch']
             generated.load_state_dict(state['generated'])
             discriminator.load_state_dict(state['discriminator'])
+            self.p_model.load_state_dict(state['p_model'])
             G_optim.load_state_dict(state['G_optim'])
             D_optim.load_state_dict(state['D_optim'])
             print(" [*] Load SUCCESS")
