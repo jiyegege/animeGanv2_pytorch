@@ -59,7 +59,7 @@ if __name__ == '__main__':
     import numpy as np
     from tools.utils import preprocessing
 
-    image = Image.open("example/10.jpg")
+    image = Image.open("../dataset/test/test_photo256/0.png")
     image = image.resize((224, 224))
     np_img = np.array(image).astype('float32')
     np_img = preprocessing(np_img, [224, 224])
@@ -69,6 +69,7 @@ if __name__ == '__main__':
     img = img.unsqueeze(0)
 
     vgg = Vgg19()
+    print(vgg)
 
     feat = vgg(img)
 

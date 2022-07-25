@@ -11,6 +11,7 @@ from tools.dataset import AnimeDataSet
 from tools.ops import *
 from tools.utils import *
 from net.vgg19 import Vgg19
+from net.mobilenet import Mobilenet
 
 import torch
 import torch.nn
@@ -53,7 +54,7 @@ class AnimeGANv2(object):
                                       batch_size=wandb.config.batch_size,
                                       pin_memory=True)
         self.dataset_num = imageDataSet.__len__()
-        self.p_model = Vgg19().to(self.device).eval()
+        self.p_model = Mobilenet().to(self.device).eval()
 
         self.pre_train_weight = args.pre_train_weight
 
