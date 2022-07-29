@@ -155,8 +155,9 @@ class AnimeGANv2(object):
                 if "out_layer" not in name:
                     value.requires_grad = False
 
-            for name, param in discriminator.named_parameters():
-                print(name, param.requires_grad)
+            for name, value in model.named_parameters():
+                if "conv3" not in name:
+                    value.requires_grad = False
 
             self.p_model.load_state_dict(state['p_model'])
             G_optim.load_state_dict(state['G_optim'])
