@@ -150,6 +150,14 @@ class AnimeGANv2(object):
                 start_epoch = state['epoch']
             generated.load_state_dict(state['generated'])
             discriminator.load_state_dict(state['discriminator'])
+
+            for name, value in generated.named_parameters():
+                if "out_layer" not in name:
+                    value.requires_grad = False
+
+            for name, param in discriminator.named_parameters():
+                print(name, param.requires_grad)
+
             self.p_model.load_state_dict(state['p_model'])
             G_optim.load_state_dict(state['G_optim'])
             D_optim.load_state_dict(state['D_optim'])
