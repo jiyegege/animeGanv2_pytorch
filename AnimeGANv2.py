@@ -155,7 +155,7 @@ class AnimeGANv2(object):
                 if "out_layer" not in name:
                     value.requires_grad = False
 
-            for name, value in model.named_parameters():
+            for name, value in discriminator.named_parameters():
                 if "conv3" not in name:
                     value.requires_grad = False
 
