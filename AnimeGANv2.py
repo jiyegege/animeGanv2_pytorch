@@ -54,7 +54,7 @@ class AnimeGANv2(object):
                                       batch_size=wandb.config.batch_size,
                                       pin_memory=True)
         self.dataset_num = imageDataSet.__len__()
-        self.p_model = Mobilenet().to(self.device).eval()
+        self.p_model = Vgg19().to(self.device).eval()
 
         self.pre_train_weight = args.pre_train_weight
 
@@ -188,26 +188,17 @@ class AnimeGANv2(object):
                         anime_gray = data[2].to(self.device)
                         anime_smooth = data[3].to(self.device)
 
-                        if j == wandb.config.training_rate:
-                            D_optim.zero_grad()
-                            fake_image = generated(real).detach()
-                            d_loss = self.d_train_step(D_optim, anime, anime_gray, anime_smooth, discriminator, epoch,
-                                                       fake_image)
+                        g_loss, d_loss = self.train_step(anime, anime_smooth, anime_gray, real, G_optim, D_optim,
+                                                         discriminator, generated, epoch, j)
 
-                        # Update G network
-                        G_optim.zero_grad()
-                        fake_image = generated(real)
-                        d_fake_image = discriminator(fake_image)
-                        g_loss = self.g_train_step(G_optim, anime_gray, d_fake_image, epoch, fake_image, real)
-
-                        mean_loss.append([d_loss.item(), g_loss.item()])
+                        mean_loss.append([d_loss, g_loss])
                         tbar.set_description('Epoch %d' % epoch)
                         if j == wandb.config.training_rate:
-                            tbar.set_postfix(d_loss=d_loss.item(), g_loss=g_loss.item(),
+                            tbar.set_postfix(d_loss=d_loss, g_loss=g_loss,
                                              mean_d_loss=np.mean(mean_loss, axis=0)[0],
                                              mean_g_loss=np.mean(mean_loss, axis=0)[1])
                         else:
-                            tbar.set_postfix(g_loss=g_loss.item(), mean_g_loss=np.mean(mean_loss, axis=0)[1])
+                            tbar.set_postfix(g_loss=g_loss, mean_g_loss=np.mean(mean_loss, axis=0)[1])
                         tbar.update()
 
                         if (step + 1) % 200 == 0:
@@ -249,7 +240,12 @@ class AnimeGANv2(object):
                 os.makedirs(save_model_path)
             torch.save(generated, os.path.join(save_model_path, 'generated_' + self.dataset_name + '.pth'))
 
-    def g_train_step(self, G_optim, anime_gray, generated_logit, epoch, fake_image, real):
+    def train_step(self, anime, anime_smooth, anime_gray, real, G_optim,
+                   D_optim, discriminator, generated, epoch, j):
+        G_optim.zero_grad()
+        fake_image = generated(real)
+        generated_logit = discriminator(fake_image)
+
         # gan
         c_loss, s_loss = con_sty_loss(self.p_model, real, anime_gray, fake_image)
         tv_loss = wandb.config.tv_weight * total_variation_loss(fake_image)
@@ -259,39 +255,43 @@ class AnimeGANv2(object):
         Generator_loss = t_loss + g_loss
         Generator_loss.backward()
         G_optim.step()
+
+        # discriminator
+        if j == wandb.config.training_rate:
+            D_optim.zero_grad()
+            d_anime_logit = discriminator(anime)
+            d_anime_gray_logit = discriminator(anime_gray)
+            d_smooth_logit = discriminator(anime_smooth)
+            generated_logit = discriminator(fake_image)
+
+            """ Define Loss """
+            if wandb.config.gan_type.__contains__('gp') or wandb.config.gan_type.__contains__('lp') or \
+                    wandb.config.gan_type.__contains__('dragan'):
+                GP = self.gradient_panalty(real=anime, fake=fake_image, discriminator=discriminator)
+            else:
+                GP = 0.0
+            d_loss = wandb.config.d_adv_weight * discriminator_loss(wandb.config.gan_type,
+                                                                    d_anime_logit,
+                                                                    d_anime_gray_logit,
+                                                                    generated_logit,
+                                                                    d_smooth_logit, epoch, self.writer,
+                                                                    wandb.config.real_loss_weight,
+                                                                    wandb.config.fake_loss_weight,
+                                                                    wandb.config.gray_loss_weight,
+                                                                    wandb.config.real_blur_loss_weight) + GP
+            d_loss.backward()
+            D_optim.step()
+
         self.writer.add_scalar("Generator_loss", Generator_loss.item(), epoch)
         self.writer.add_scalar("G_con_loss", c_loss.item(), epoch)
         self.writer.add_scalar("G_sty_loss", s_loss.item(), epoch)
         self.writer.add_scalar("G_color_loss", col_loss.item(), epoch)
         self.writer.add_scalar("G_gan_loss", g_loss.item(), epoch)
         self.writer.add_scalar("G_pre_model_loss", t_loss.item(), epoch)
-        return Generator_loss
 
-    def d_train_step(self, D_optim, anime, anime_gray, anime_smooth, discriminator, epoch, fake_image):
-        # Update D network
-        d_anime_logit = discriminator(anime)
-        d_anime_gray_logit = discriminator(anime_gray)
-        d_smooth_logit = discriminator(anime_smooth)
-        generated_logit = discriminator(fake_image)
-        """ Define Loss """
-        if wandb.config.gan_type.__contains__('gp') or wandb.config.gan_type.__contains__('lp') or \
-                wandb.config.gan_type.__contains__('dragan'):
-            GP = self.gradient_panalty(real=anime, fake=fake_image, discriminator=discriminator)
-        else:
-            GP = 0.0
-        d_loss = wandb.config.d_adv_weight * discriminator_loss(wandb.config.gan_type,
-                                                                d_anime_logit,
-                                                                d_anime_gray_logit,
-                                                                generated_logit,
-                                                                d_smooth_logit, epoch, self.writer,
-                                                                wandb.config.real_loss_weight,
-                                                                wandb.config.fake_loss_weight,
-                                                                wandb.config.gray_loss_weight,
-                                                                wandb.config.real_blur_loss_weight) + GP
-        d_loss.backward()
-        D_optim.step()
-        self.writer.add_scalar("Discriminator_loss", d_loss.item(), epoch)
-        return d_loss
+        if j == wandb.config.training_rate:
+            self.writer.add_scalar("Discriminator_loss", d_loss.item(), epoch)
+        return Generator_loss.item(), d_loss.item()
 
     def init_step(self, epoch, generated, init_mean_loss, init_optim, real):
         init_optim.zero_grad()

@@ -1,4 +1,5 @@
 import torch.nn as nn
+from torch.nn.utils import spectral_norm
 
 
 class ConvNormLReLU(nn.Module):
@@ -60,15 +61,15 @@ class ConvSN(nn.Module):
         if pad_mode not in pad_layer:
             raise NotImplementedError
         self.pad_layer = pad_layer[pad_mode](padding)
-        self.conv = nn.Conv2d(in_ch, out_ch, kernel_size=kernel_size, stride=stride, padding=0, bias=use_bias)
         if sn:
-            self.norm = nn.GroupNorm(num_groups=1, num_channels=out_ch, affine=True)
+            self.conv = spectral_norm(nn.Conv2d(in_ch, out_ch, kernel_size=kernel_size, stride=stride, padding=0,
+                                                bias=use_bias))
+        else:
+            self.conv = nn.Conv2d(in_ch, out_ch, kernel_size=kernel_size, stride=stride, padding=0, bias=use_bias)
 
     def forward(self, input):
         out = self.pad_layer(input)
         out = self.conv(out)
-        if hasattr(self, 'norm'):
-            out = self.norm(out)
         return out
 
 
