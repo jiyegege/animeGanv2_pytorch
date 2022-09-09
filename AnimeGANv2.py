@@ -254,7 +254,6 @@ class AnimeGANv2(object):
         g_loss = wandb.config.g_adv_weight * generator_loss(wandb.config.gan_type, generated_logit)
         Generator_loss = t_loss + g_loss
         Generator_loss.backward(retain_graph=True)
-        G_optim.step()
 
         # discriminator
         if j == wandb.config.training_rate:
@@ -262,7 +261,6 @@ class AnimeGANv2(object):
             d_anime_logit = discriminator(anime)
             d_anime_gray_logit = discriminator(anime_gray)
             d_smooth_logit = discriminator(anime_smooth)
-            generated_logit = discriminator(fake_image)
 
             """ Define Loss """
             if wandb.config.gan_type.__contains__('gp') or wandb.config.gan_type.__contains__('lp') or \
@@ -281,7 +279,7 @@ class AnimeGANv2(object):
                                                                     wandb.config.real_blur_loss_weight) + GP
             d_loss.backward()
             D_optim.step()
-
+        G_optim.step()
         self.writer.add_scalar("Generator_loss", Generator_loss.item(), epoch)
         self.writer.add_scalar("G_con_loss", c_loss.item(), epoch)
         self.writer.add_scalar("G_sty_loss", s_loss.item(), epoch)
