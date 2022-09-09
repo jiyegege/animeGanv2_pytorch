@@ -253,7 +253,7 @@ class AnimeGANv2(object):
         t_loss = wandb.config.con_weight * c_loss + wandb.config.sty_weight * s_loss + col_loss * wandb.config.color_weight + tv_loss
         g_loss = wandb.config.g_adv_weight * generator_loss(wandb.config.gan_type, generated_logit)
         Generator_loss = t_loss + g_loss
-        Generator_loss.backward(retain_grad=True)
+        Generator_loss.backward(retain_graph=True)
         G_optim.step()
 
         # discriminator
