@@ -1,8 +1,15 @@
 import argparse
+import os
+
+import torch
+import yaml
+from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 from AnimeGANv2 import AnimeGANv2
+from AnimeGANInitTrain import AnimeGANInitTrain
+from tools.AnimeGanDataModel import AnimeGANDataModel
 from tools.utils import *
-
 
 """parsing and configuration"""
 
@@ -11,22 +18,14 @@ def parse_args():
     desc = "AnimeGANv2"
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('--config_path', type=str, help='hyper params config path', required=True)
-    parser.add_argument('--dataset', type=str, default='Hayao', help='dataset_name')
-    parser.add_argument('--save_freq', type=int, default=1, help='The number of ckpt_save_freq')
     parser.add_argument('--img_size', type=list, default=[256, 256], help='The size of image: H and W')
     parser.add_argument('--img_ch', type=int, default=3, help='The size of image channel')
     parser.add_argument('--ch', type=int, default=64, help='base channel number per layer')
     parser.add_argument('--n_dis', type=int, default=3, help='The number of discriminator layer')
-    parser.add_argument('--checkpoint_dir', type=str, default='checkpoint',
-                        help='Directory name to save the checkpoints')
-    parser.add_argument('--log_dir', type=str, default='logs',
-                        help='Directory name to save training logs')
-    parser.add_argument('--sample_dir', type=str, default='samples',
-                        help='Directory name to save the samples on training')
-
     parser.add_argument('--hyperparameters', type=str, default='False')
     parser.add_argument('--pre_train_weight', type=str, required=False,
                         help='pre-trained weight path, tensorflow checkpoint directory')
+    parser.add_argument('--init_train_flag', type=str, required=True, default='False')
 
     return check_args(parser.parse_args())
 
@@ -35,15 +34,6 @@ def parse_args():
 
 
 def check_args(args):
-    # --checkpoint_dir
-    check_folder(args.checkpoint_dir)
-
-    # --log_dir
-    check_folder(args.log_dir)
-
-    # --sample_dir
-    check_folder(args.sample_dir)
-
     # --epoch
     try:
         assert args.epoch >= 1
@@ -66,11 +56,30 @@ def main():
     args = parse_args()
     if args is None:
         exit()
+    if args.init_train_flag.lower() == 'true':
+        model = AnimeGANInitTrain(args)
+        checkpoint_callback = ModelCheckpoint(dirpath=os.path.join('checkpoint/initAnimeGan'), monitor='epoch',
+                                              mode='max', save_top_k=-1)
+    else:
+        model = AnimeGANv2(args)
+        checkpoint_callback = ModelCheckpoint(dirpath=os.path.join('checkpoint/animeGan', args.dataset), save_top_k=-1,
+                                              monitor='epoch', mode='max')
+    config_dict = yaml.safe_load(open(args.config_path, 'r'))
 
-    # open session
-    # gpu_options = tf.GPUOptions(allow_growth=True)
-    gan = AnimeGANv2(args)
-    gan.train()
+    dataModel = AnimeGANDataModel(data_dir=config_dict['dataset']['path'],
+                                  dataset=config_dict['dataset']['name'],
+                                  batch_size=config_dict['dataset']['batch_size'],
+                                  num_workers=config_dict['dataset']['num_workers'])
+    if args.pre_train_weight:
+        print("Load from checkpoint:", args.pre_train_weight)
+        model.load_from_checkpoint(args.pre_train_weight, strict=False)
+    trainer = Trainer(
+        accelerator="auto",
+        devices=1 if torch.cuda.is_available() else None,
+        max_epochs=5,
+        callbacks=[checkpoint_callback]
+    )
+    trainer.fit(model, dataModel)
     print(" [*] Training finished!")
 
 
