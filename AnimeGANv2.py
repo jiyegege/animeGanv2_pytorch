@@ -110,7 +110,7 @@ class AnimeGANv2(pl.LightningModule):
         # log epoch metrics to wandb
         log_dict = batch_parts[len(batch_parts) - 1]
         for item in log_dict:
-            for key, value in item.items():
+            for key, value in item['log'].items():
                 wandb.log({key: value})
 
         # log epoch images to wandb
