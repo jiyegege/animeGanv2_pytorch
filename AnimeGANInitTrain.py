@@ -52,7 +52,7 @@ class AnimeGANInitTrain(pl.LightningModule):
         init_c_loss = con_loss(self.p_model, real, generator_images)
         init_loss = wandb.config.model['con_weight'] * init_c_loss
 
-        log_dict = {'init_loss': init_loss}
+        log_dict = {'init_loss': init_loss.item()}
         output = OrderedDict({
             'loss': init_loss,
             'log': log_dict

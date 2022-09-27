@@ -76,9 +76,9 @@ class AnimeGANv2(pl.LightningModule):
                    + wandb.config.model['real_blur_loss_weight'] * real_blur_loss
             d_loss = wandb.config.model['d_adv_weight'] * loss
 
-            log_dict = {'Discriminator_loss': d_loss, 'Discriminator_real_loss': real_loss,
-                        'Discriminator_fake_loss': fake_loss,
-                        'Discriminator_gray_loss': gray_loss, 'Discriminator_real_blur_loss': real_blur_loss}
+            log_dict = {'Discriminator_loss': d_loss.item(), 'Discriminator_real_loss': real_loss.item(),
+                        'Discriminator_fake_loss': fake_loss.item(),
+                        'Discriminator_gray_loss': gray_loss.item(), 'Discriminator_real_blur_loss': real_blur_loss.item()}
             self.log('D_loss', d_loss, on_epoch=False, on_step=True, prog_bar=True)
             output = OrderedDict({
                 'loss': d_loss,
@@ -97,8 +97,10 @@ class AnimeGANv2(pl.LightningModule):
             g_loss = wandb.config.model['g_adv_weight'] * generator_loss(generated_logit)
             Generator_loss = t_loss + g_loss
 
-            log_dict = {'Generator_loss': Generator_loss, 'Generator_con_loss': c_loss, 'Generator_sty_loss': s_loss,
-                        'Generator_color_loss': col_loss}
+            log_dict = {'Generator_loss': Generator_loss.item(),
+                        'Generator_con_loss': c_loss.item(),
+                        'Generator_sty_loss': s_loss.item(),
+                        'Generator_color_loss': col_loss.item()}
             self.log('G_loss', Generator_loss, on_epoch=False, on_step=True, prog_bar=True)
             output = OrderedDict({
                 'loss': Generator_loss,
