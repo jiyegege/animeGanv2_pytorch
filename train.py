@@ -63,7 +63,8 @@ def main():
         )
     else:
         model = AnimeGANv2(args)
-        checkpoint_callback = ModelCheckpoint(dirpath=os.path.join('checkpoint/animeGan', config_dict['dataset']['name']), save_top_k=-1,
+        checkpoint_callback = ModelCheckpoint(dirpath=os.path.join('checkpoint/animeGan', config_dict['dataset']['name']),
+                                              save_top_k=-1,
                                               monitor='epoch', mode='max')
         logger = TensorBoardLogger(save_dir='logs/animeGan')
         trainer = Trainer(

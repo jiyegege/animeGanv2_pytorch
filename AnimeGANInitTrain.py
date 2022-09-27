@@ -33,7 +33,7 @@ class AnimeGANInitTrain(pl.LightningModule):
         print("##### Information #####")
         print("# dataset : ", wandb.config.dataset['name'])
         print("# batch_size : ", wandb.config.dataset['batch_size'])
-        print("# epoch : ", wandb.config.trainer['epoch'])
+        print("# epoch : ", wandb.config.trainer['init_epoch'])
         print("# training image size [H, W] : ", self.img_size)
         print("#con_weight,sty_weight : ", wandb.config.model['con_weight'])
         print("#init_lr: ", wandb.config.model['init_lr'])
@@ -79,7 +79,7 @@ class AnimeGANInitTrain(pl.LightningModule):
 
     def training_epoch_end(self, batch_parts):
         # log epoch metrics to wandb
-        log_dict = batch_parts[len(batch_parts)]
+        log_dict = batch_parts[len(batch_parts) - 1]
         for item in log_dict:
             for key, value in item.items():
                 wandb.log({key: value})

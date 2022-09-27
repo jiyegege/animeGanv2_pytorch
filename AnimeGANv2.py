@@ -108,7 +108,7 @@ class AnimeGANv2(pl.LightningModule):
 
     def training_epoch_end(self, batch_parts):
         # log epoch metrics to wandb
-        log_dict = batch_parts[len(batch_parts)]
+        log_dict = batch_parts[len(batch_parts) - 1]
         for item in log_dict:
             for key, value in item.items():
                 wandb.log({key: value})
