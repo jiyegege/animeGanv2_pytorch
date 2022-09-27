@@ -79,6 +79,7 @@ class AnimeGANv2(pl.LightningModule):
             log_dict = {'Discriminator_loss': d_loss, 'Discriminator_real_loss': real_loss,
                         'Discriminator_fake_loss': fake_loss,
                         'Discriminator_gray_loss': gray_loss, 'Discriminator_real_blur_loss': real_blur_loss}
+            self.log('D_loss', d_loss, on_epoch=False, on_step=True, prog_bar=True)
             output = OrderedDict({
                 'loss': d_loss,
                 'log': log_dict
@@ -98,6 +99,7 @@ class AnimeGANv2(pl.LightningModule):
 
             log_dict = {'Generator_loss': Generator_loss, 'Generator_con_loss': c_loss, 'Generator_sty_loss': s_loss,
                         'Generator_color_loss': col_loss}
+            self.log('G_loss', Generator_loss, on_epoch=False, on_step=True, prog_bar=True)
             output = OrderedDict({
                 'loss': Generator_loss,
                 'log': log_dict
