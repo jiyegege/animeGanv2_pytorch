@@ -1,4 +1,5 @@
 import os
+import sys
 from unittest import TestCase
 
 import torch
@@ -9,7 +10,8 @@ from PIL import Image
 import numpy as np
 from tools.utils import preprocessing
 
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 
 class TestVGGCaffePreTrained(TestCase):

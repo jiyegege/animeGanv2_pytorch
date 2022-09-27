@@ -1,8 +1,9 @@
+import os
 from collections import OrderedDict
 
+import numpy as np
 import pytorch_lightning as pl
 import torch
-import numpy as np
 from torch import nn
 
 
@@ -10,7 +11,8 @@ class VGGCaffePreTrained(pl.LightningModule):
     cfg = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256,
            'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M']
 
-    def __init__(self, weights_path: str = '../models/vgg19.npy', output_index: int = 26) -> None:
+    def __init__(self, weights_path: str = os.path.dirname(os.path.abspath(__file__))+'/../models/vgg19.npy',
+                 output_index: int = 26) -> None:
         super().__init__()
         try:
             data_dict: dict = np.load(weights_path, encoding='latin1', allow_pickle=True).item()

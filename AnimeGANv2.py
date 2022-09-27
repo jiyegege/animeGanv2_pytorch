@@ -6,13 +6,11 @@ import pytorch_lightning as pl
 import torch.nn
 import yaml
 from torch.optim import Adam
-from torch.utils.data import DataLoader
 
 import wandb
+from net.backtone import VGGCaffePreTrained
 from net.discriminator import Discriminator
 from net.generator import Generator
-from net.backtone import VGGCaffePreTrained
-from tools.dataset import AnimeDataSet
 from tools.ops import *
 from tools.utils import *
 
@@ -33,21 +31,23 @@ class AnimeGANv2(pl.LightningModule):
 
         """ Define Generator, Discriminator """
         self.generated = Generator()
-        self.discriminator = Discriminator(args.ch, 3, args.n_dis, wandb.config.model.sn)
+        self.discriminator = Discriminator(args.ch, 3, args.n_dis, wandb.config.model['sn'])
 
         print()
         print("##### Information #####")
-        print("# dataset : ", wandb.config.dataset.dataset)
-        print("# batch_size : ", wandb.config.dataset.batch_size)
-        print("# epoch : ", wandb.config.trainer.epoch)
+        print("# dataset : ", wandb.config.dataset['name'])
+        print("# batch_size : ", wandb.config.dataset['batch_size'])
+        print("# epoch : ", wandb.config.trainer['epoch'])
         print("# training image size [H, W] : ", self.img_size)
         print("# g_adv_weight,d_adv_weight,con_weight,sty_weight,color_weight,tv_weight : ",
-              wandb.config.model.g_adv_weight,
-              wandb.config.model.d_adv_weight, wandb.config.model.con_weight, wandb.config.model.sty_weight,
-              wandb.config.model.color_weight,
-              wandb.config.model.tv_weight)
-        print("#g_lr,d_lr : ", wandb.config.model.g_lr, wandb.config.model.d_lr)
-        print(f"# training_rate G -- D: {wandb.config.trainer.training_rate} : 1")
+              wandb.config.model['g_adv_weight'],
+              wandb.config.model['d_adv_weight'],
+              wandb.config.model['con_weight'],
+              wandb.config.model['sty_weight'],
+              wandb.config.model['color_weight'],
+              wandb.config.model['tv_weight'])
+        print("#g_lr,d_lr : ", wandb.config.model['g_lr'], wandb.config.model['d_lr'])
+        print(f"# training_rate G -- D: {wandb.config.trainer['training_rate']} : 1")
         print()
 
     def on_fit_start(self):
@@ -70,11 +70,11 @@ class AnimeGANv2(pl.LightningModule):
             (real_loss, fake_loss, gray_loss, real_blur_loss) = discriminator_loss(d_anime_logit, d_anime_gray_logit,
                                                                                    generated_logit,
                                                                                    d_smooth_logit)
-            loss = wandb.config.model.real_loss_weight * real_loss \
-                   + wandb.config.model.fake_loss_weight * fake_loss \
-                   + wandb.config.model.gray_loss_weight * gray_loss \
-                   + wandb.config.model.real_blur_loss_weight * real_blur_loss
-            d_loss = wandb.config.model.d_adv_weight * loss
+            loss = wandb.config.model['real_loss_weight'] * real_loss \
+                   + wandb.config.model['fake_loss_weight'] * fake_loss \
+                   + wandb.config.model['gray_loss_weight'] * gray_loss \
+                   + wandb.config.model['real_blur_loss_weight'] * real_blur_loss
+            d_loss = wandb.config.model['d_adv_weight'] * loss
 
             log_dict = {'Discriminator_loss': d_loss, 'Discriminator_real_loss': real_loss,
                         'Discriminator_fake_loss': fake_loss,
@@ -87,13 +87,13 @@ class AnimeGANv2(pl.LightningModule):
         # train generator
         elif optimizer_idx == 1:
             c_loss, s_loss = con_sty_loss(self.p_model, real, anime_gray, fake_image)
-            tv_loss = wandb.config.model.tv_weight * total_variation_loss(fake_image)
+            tv_loss = wandb.config.model['tv_weight'] * total_variation_loss(fake_image)
             col_loss = color_loss(real, fake_image)
-            t_loss = wandb.config.model.con_weight * c_loss \
-                     + wandb.config.model.sty_weight * s_loss \
-                     + wandb.config.model.color_weight * col_loss \
+            t_loss = wandb.config.model['con_weight'] * c_loss \
+                     + wandb.config.model['sty_weight'] * s_loss \
+                     + wandb.config.model['color_weight'] * col_loss \
                      + tv_loss
-            g_loss = wandb.config.model.g_adv_weight * generator_loss(generated_logit)
+            g_loss = wandb.config.model['g_adv_weight'] * generator_loss(generated_logit)
             Generator_loss = t_loss + g_loss
 
             log_dict = {'Generator_loss': Generator_loss, 'Generator_con_loss': c_loss, 'Generator_sty_loss': s_loss,
@@ -130,6 +130,6 @@ class AnimeGANv2(pl.LightningModule):
         wandb.log({"val_images": val_images})
 
     def configure_optimizers(self):
-        G_optim = Adam(self.generated.parameters(), lr=wandb.config.model.g_lr, betas=(0.5, 0.999))
-        D_optim = Adam(self.discriminator.parameters(), lr=wandb.config.model.d_lr, betas=(0.5, 0.999))
+        G_optim = Adam(self.generated.parameters(), lr=wandb.config.model['g_lr'], betas=(0.5, 0.999))
+        D_optim = Adam(self.discriminator.parameters(), lr=wandb.config.model['d_lr'], betas=(0.5, 0.999))
         return [D_optim, G_optim], []

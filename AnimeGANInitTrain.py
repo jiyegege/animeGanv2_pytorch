@@ -6,12 +6,10 @@ import pytorch_lightning as pl
 import torch.nn
 import yaml
 from torch.optim import Adam
-from torch.utils.data import DataLoader
 
 import wandb
-from net.generator import Generator
 from net.backtone import VGGCaffePreTrained
-from tools.dataset import AnimeDataSet
+from net.generator import Generator
 from tools.ops import *
 from tools.utils import *
 
@@ -33,12 +31,12 @@ class AnimeGANInitTrain(pl.LightningModule):
 
         print()
         print("##### Information #####")
-        print("# dataset : ", wandb.config.dataset.dataset)
-        print("# batch_size : ", wandb.config.dataset.batch_size)
-        print("# epoch : ", wandb.config.trainer.epoch)
+        print("# dataset : ", wandb.config.dataset['name'])
+        print("# batch_size : ", wandb.config.dataset['batch_size'])
+        print("# epoch : ", wandb.config.trainer['epoch'])
         print("# training image size [H, W] : ", self.img_size)
-        print("#con_weight,sty_weight : ", wandb.config.model.con_weight)
-        print("#init_lr: ", wandb.config.model.init_lr)
+        print("#con_weight,sty_weight : ", wandb.config.model['con_weight'])
+        print("#init_lr: ", wandb.config.model['init_lr'])
         print()
 
     def on_fit_start(self):
@@ -52,7 +50,7 @@ class AnimeGANInitTrain(pl.LightningModule):
         generator_images = self.generated(real)
         # init pharse
         init_c_loss = con_loss(self.p_model, real, generator_images)
-        init_loss = wandb.config.model.con_weight * init_c_loss
+        init_loss = wandb.config.model['con_weight'] * init_c_loss
 
         log_dict = {'init_loss': init_loss}
         output = OrderedDict({
@@ -87,5 +85,5 @@ class AnimeGANInitTrain(pl.LightningModule):
                 wandb.log({key: value})
 
     def configure_optimizers(self):
-        G_optim = Adam(self.generated.parameters(), lr=wandb.config.model.init_lr, betas=(0.5, 0.999))
+        G_optim = Adam(self.generated.parameters(), lr=wandb.config.model['init_lr'], betas=(0.5, 0.999))
         return G_optim

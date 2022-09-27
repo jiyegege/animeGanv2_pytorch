@@ -3,7 +3,7 @@ import os
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 
-from dataset import AnimeDataSet
+from tools.dataset import AnimeDataSet
 
 
 class AnimeGANDataModel(LightningDataModule):

@@ -1,13 +1,12 @@
 import argparse
-import os
 
-import torch
 import yaml
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers import TensorBoardLogger
 
-from AnimeGANv2 import AnimeGANv2
 from AnimeGANInitTrain import AnimeGANInitTrain
+from AnimeGANv2 import AnimeGANv2
 from tools.AnimeGanDataModel import AnimeGANDataModel
 from tools.utils import *
 
@@ -36,15 +35,9 @@ def parse_args():
 def check_args(args):
     # --epoch
     try:
-        assert args.epoch >= 1
+        assert args.config_path
     except:
-        print('number of epochs must be larger than or equal to one')
-
-    # --batch_size
-    try:
-        assert args.batch_size >= 1
-    except:
-        print('batch size must be larger than or equal to one')
+        print('config_path is required')
     return args
 
 
@@ -56,15 +49,29 @@ def main():
     args = parse_args()
     if args is None:
         exit()
+    config_dict = yaml.safe_load(open(args.config_path, 'r'))
     if args.init_train_flag.lower() == 'true':
         model = AnimeGANInitTrain(args)
         checkpoint_callback = ModelCheckpoint(dirpath=os.path.join('checkpoint/initAnimeGan'), monitor='epoch',
                                               mode='max', save_top_k=-1)
+        logger = TensorBoardLogger(save_dir='logs/initAnimeGan')
+        trainer = Trainer(
+            accelerator='auto',
+            max_epochs=config_dict['trainer']['init_epoch'],
+            callbacks=[checkpoint_callback],
+            logger=logger
+        )
     else:
         model = AnimeGANv2(args)
         checkpoint_callback = ModelCheckpoint(dirpath=os.path.join('checkpoint/animeGan', args.dataset), save_top_k=-1,
                                               monitor='epoch', mode='max')
-    config_dict = yaml.safe_load(open(args.config_path, 'r'))
+        logger = TensorBoardLogger(save_dir='logs/animeGan')
+        trainer = Trainer(
+            accelerator='auto',
+            max_epochs=config_dict['trainer']['epoch'],
+            callbacks=[checkpoint_callback],
+            logger=logger
+        )
 
     dataModel = AnimeGANDataModel(data_dir=config_dict['dataset']['path'],
                                   dataset=config_dict['dataset']['name'],
@@ -73,12 +80,7 @@ def main():
     if args.pre_train_weight:
         print("Load from checkpoint:", args.pre_train_weight)
         model.load_from_checkpoint(args.pre_train_weight, strict=False)
-    trainer = Trainer(
-        accelerator="auto",
-        devices=1 if torch.cuda.is_available() else None,
-        max_epochs=5,
-        callbacks=[checkpoint_callback]
-    )
+
     trainer.fit(model, dataModel)
     print(" [*] Training finished!")
 
