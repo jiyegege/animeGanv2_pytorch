@@ -60,7 +60,7 @@ def main():
         wandb_logger = WandbLogger(project='AnimeGanV2_init_pytorch', name='initAnimeGan')
         trainer = Trainer(
             accelerator='auto',
-            max_epochs=config_dict['trainer']['init_epoch'],
+            max_epochs=config_dict['trainer']['epoch'],
             callbacks=[checkpoint_callback],
             logger=[tensorboard_logger, wandb_logger]
         )
@@ -68,7 +68,7 @@ def main():
         print("##### Information #####")
         print("# dataset : ", config_dict['dataset']['name'])
         print("# batch_size : ", config_dict['dataset']['batch_size'])
-        print("# epoch : ", config_dict['trainer']['init_epoch'])
+        print("# epoch : ", config_dict['trainer']['epoch'])
         print("# training image size [H, W] : ", args.img_size)
         print("#con_weight,sty_weight : ", config_dict['model']['con_weight'])
         print("#init_lr: ", config_dict['model']['init_lr'])
