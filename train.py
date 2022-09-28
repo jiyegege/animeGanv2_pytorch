@@ -25,6 +25,7 @@ def parse_args():
     parser.add_argument('--hyperparameters', type=str, default='False')
     parser.add_argument('--pre_train_weight', type=str, required=False,
                         help='pre-trained weight path, tensorflow checkpoint directory')
+    parser.add_argument('--ckpt_path', type=str, required=False, help='checkpoint path')
     parser.add_argument('--init_train_flag', type=str, required=True, default='False')
 
     return check_args(parser.parse_args())
@@ -108,8 +109,11 @@ def main():
     if args.pre_train_weight:
         print("Load from checkpoint:", args.pre_train_weight)
         model.load_from_checkpoint(args.pre_train_weight, strict=False)
-
-    trainer.fit(model, dataModel)
+    if args.ckpt_path:
+        print("resume from checkpoint:", args.ckpt_path)
+        trainer.fit(model, dataModel, ckpt_path=args.ckpt_path)
+    else:
+        trainer.fit(model, dataModel)
     print(" [*] Training finished!")
 
 
