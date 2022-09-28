@@ -1,5 +1,5 @@
 trainer:
-  epoch: 101
+  epoch: 40
 model:
   # for Hayao : 1.2, 1.2, 1.2, 0.8
   # for Paprika : 1.0, 1.0, 1.0, 0.005

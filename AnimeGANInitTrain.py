@@ -1,10 +1,8 @@
-import argparse
 from collections import OrderedDict
 from glob import glob
 
 import pytorch_lightning as pl
 import torch.nn
-import yaml
 from torch.optim import Adam
 
 import wandb
@@ -18,7 +16,7 @@ from tools.utils import *
 # Model
 ##################################################################################
 class AnimeGANInitTrain(pl.LightningModule):
-    def __init__(self, img_size=None, **kwargs):
+    def __init__(self, img_size=None, dataset_name=None, **kwargs):
         super().__init__()
         self.save_hyperparameters()
 
@@ -59,7 +57,7 @@ class AnimeGANInitTrain(pl.LightningModule):
             self.generated.eval()
             with torch.no_grad():
                 sample_image = np.asarray(load_test_data(sample_file, self.img_size))
-                test_real = torch.from_numpy(sample_image).type_as(self.generated.weight)
+                test_real = torch.from_numpy(sample_image).type_as(self.generated.out_layer[0].weight)
                 test_generated_predict = self.generated(test_real)
                 test_generated_predict = test_generated_predict.permute(0, 2, 3, 1).cpu().detach().numpy()
                 test_generated_predict = np.squeeze(test_generated_predict, axis=0)
@@ -71,9 +69,8 @@ class AnimeGANInitTrain(pl.LightningModule):
     def training_epoch_end(self, batch_parts):
         # log epoch metrics to wandb
         log_dict = batch_parts[len(batch_parts) - 1]
-        for item in log_dict:
-            for key, value in item['log'].items():
-                wandb.log({key: value})
+        for key, value in log_dict['log'].items():
+            wandb.log({key: value})
 
     def configure_optimizers(self):
         G_optim = Adam(self.generated.parameters(), lr=self.hparams.init_lr, betas=(0.5, 0.999))

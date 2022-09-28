@@ -17,7 +17,7 @@ from tools.utils import *
 # Model
 ##################################################################################
 class AnimeGANv2(pl.LightningModule):
-    def __init__(self, ch=64, n_dis=3, img_size=None, **kwargs):
+    def __init__(self, ch=64, n_dis=3, img_size=None, dataset_name=None, **kwargs):
         super().__init__()
         self.save_hyperparameters()
 
@@ -103,7 +103,7 @@ class AnimeGANv2(pl.LightningModule):
             self.generated.eval()
             with torch.no_grad():
                 sample_image = np.asarray(load_test_data(sample_file, self.img_size))
-                test_real = torch.from_numpy(sample_image).type_as(self.generated.model[0].weight)
+                test_real = torch.from_numpy(sample_image).type_as(self.generated.out_layer[0].weight)
                 test_generated_predict = self.generated(test_real)
                 test_generated_predict = test_generated_predict.permute(0, 2, 3, 1).cpu().detach().numpy()
                 test_generated_predict = np.squeeze(test_generated_predict, axis=0)

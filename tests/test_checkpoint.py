@@ -1,7 +1,12 @@
 import argparse
 from unittest import TestCase
 
+import torch
+import yaml
+
 from AnimeGANInitTrain import AnimeGANInitTrain
+from AnimeGANv2 import AnimeGANv2
+from tensorflow.python.tools.inspect_checkpoint import print_tensors_in_checkpoint_file
 
 
 class TestCheckPoint(TestCase):
@@ -16,7 +21,13 @@ class TestCheckPoint(TestCase):
                         help='pre-trained weight path, tensorflow checkpoint directory')
     parser.add_argument('--init_train_flag', type=str, default='False')
 
+    config_dict = yaml.safe_load(open('../config/config-defaults.yaml', 'r'))
     model = AnimeGANInitTrain(parser.parse_args())
-    model.load_from_checkpoint('../checkpoint/epoch=4-step=4160.ckpt', strict=False)
+    model.load_from_checkpoint('../checkpoint/initAnimeGan/epoch=0-step=832-v2.ckpt', strict=False)
     for param_tensor in model.state_dict():
         print(param_tensor, "\t", model.state_dict()[param_tensor].size())
+
+    savedir = '../checkpoint/initAnimeGan/epoch=0-step=832-v2.ckpt'
+
+    state = torch.load(savedir)
+    print(state)

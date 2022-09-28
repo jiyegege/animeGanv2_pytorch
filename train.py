@@ -53,16 +53,20 @@ def main():
         exit()
     config_dict = yaml.safe_load(open(args.config_path, 'r'))
     if args.init_train_flag.lower() == 'true':
-        model = AnimeGANInitTrain(args.img_size, **config_dict['model'])
-        checkpoint_callback = ModelCheckpoint(dirpath=os.path.join('checkpoint/initAnimeGan'), monitor='epoch',
-                                              mode='max', save_top_k=-1)
+        model = AnimeGANInitTrain(args.img_size, config_dict['dataset']['name'], **config_dict['model'])
+        check_folder(os.path.join('checkpoint/initAnimeGan', config_dict['dataset']['name']))
+        checkpoint_callback = ModelCheckpoint(dirpath=os.path.join('checkpoint/initAnimeGan', config_dict['dataset']['name']),
+                                              monitor='epoch',
+                                              mode='max',
+                                              save_top_k=-1)
         tensorboard_logger = TensorBoardLogger(save_dir='logs/initAnimeGan')
         wandb_logger = WandbLogger(project='AnimeGanV2_init_pytorch', name='initAnimeGan')
         trainer = Trainer(
             accelerator='auto',
             max_epochs=config_dict['trainer']['epoch'],
             callbacks=[checkpoint_callback],
-            logger=[tensorboard_logger, wandb_logger]
+            logger=[tensorboard_logger, wandb_logger],
+            precision=16
         )
         print()
         print("##### Information #####")
@@ -74,7 +78,7 @@ def main():
         print("#init_lr: ", config_dict['model']['init_lr'])
         print()
     else:
-        model = AnimeGANv2(args.ch, args.n_dis, args.img_size, **config_dict['model'])
+        model = AnimeGANv2(args.ch, args.n_dis, args.img_size, config_dict['dataset']['name'], **config_dict['model'])
         checkpoint_callback = ModelCheckpoint(dirpath=os.path.join('checkpoint/animeGan', config_dict['dataset']['name']),
                                               save_top_k=-1,
                                               monitor='epoch', mode='max')
@@ -84,7 +88,8 @@ def main():
             accelerator='auto',
             max_epochs=config_dict['trainer']['epoch'],
             callbacks=[checkpoint_callback],
-            logger=[tensorboard_logger, wandb_logger]
+            logger=[tensorboard_logger, wandb_logger],
+            precision=16
         )
         print()
         print("##### Information #####")
@@ -108,7 +113,7 @@ def main():
                                   num_workers=config_dict['dataset']['num_workers'])
     if args.pre_train_weight:
         print("Load from checkpoint:", args.pre_train_weight)
-        model.load_from_checkpoint(args.pre_train_weight, strict=False)
+        model.load_from_checkpoint(args.pre_train_weight, strict=False, **config_dict['model'])
     if args.ckpt_path:
         print("resume from checkpoint:", args.ckpt_path)
         trainer.fit(model, dataModel, ckpt_path=args.ckpt_path)
