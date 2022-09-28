@@ -1,14 +1,10 @@
 import unittest
 
+import numpy as np
 import torch
 from PIL import Image
-import numpy as np
 
-from mobilenet import Mobilenet
-import torch.nn as nn
-import torchvision.models as models
-
-from torchkeras import summary
+from net.mobilenet import Mobilenet
 
 
 class MyTestCase(unittest.TestCase):

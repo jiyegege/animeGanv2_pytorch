@@ -1,0 +1,11 @@
+trainer:
+  epoch: 101
+model:
+  init_lr: 2.0e-4
+  # 1.5 for Hayao, 2.0 for Paprika, 1.2 for Shinkai
+  con_weight: 1.5
+dataset:
+  path: "./dataset"
+  name: "Hayao"
+  batch_size: 8
+  num_workers: 4

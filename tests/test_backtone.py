@@ -5,7 +5,7 @@ from unittest import TestCase
 import torch
 from matplotlib import pyplot as plt
 
-from backtone import VGGCaffePreTrained
+from net.backtone import VGGCaffePreTrained
 from PIL import Image
 import numpy as np
 from tools.utils import preprocessing
@@ -16,7 +16,7 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 class TestVGGCaffePreTrained(TestCase):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = VGGCaffePreTrained()
+    model = VGGCaffePreTrained().eval()
     model.setup(device=device)
 
     image = Image.open("../dataset/test/test_photo256/0.png")

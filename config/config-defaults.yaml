@@ -1,7 +1,5 @@
 trainer:
   epoch: 101
-  init_epoch: 5
-  training_rate: 1
 model:
   # for Hayao : 1.2, 1.2, 1.2, 0.8
   # for Paprika : 1.0, 1.0, 1.0, 0.005
@@ -10,7 +8,6 @@ model:
   fake_loss_weight: 1.7
   gray_loss_weight: 1.7
   real_blur_loss_weight: 1.0
-  init_lr: 2.0e-4
   d_lr: 4.0e-5
   g_lr: 2.0e-5
   g_adv_weight: 300
@@ -23,7 +20,6 @@ model:
   color_weight: 10.
   # 1. for Hayao, 0.1 for Paprika, 1. for Shinkai
   tv_weight: 1
-  ld: 10.
   sn: True
 
 dataset:

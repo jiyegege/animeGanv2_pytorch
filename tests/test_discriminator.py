@@ -1,5 +1,5 @@
 from unittest import TestCase
-from discriminator import Discriminator
+from net.discriminator import Discriminator
 
 class TestDiscriminator(TestCase):
     def test_request_grade(self):
