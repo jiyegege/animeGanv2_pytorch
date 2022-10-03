@@ -1,4 +1,5 @@
 import argparse
+import time
 
 import torch
 import yaml
@@ -61,7 +62,9 @@ def main():
                                               mode='max',
                                               save_top_k=-1)
         tensorboard_logger = TensorBoardLogger(save_dir='logs/initAnimeGan')
-        wandb_logger = WandbLogger(project='AnimeGanV2_init_pytorch', name='initAnimeGan')
+        wandb_logger = WandbLogger(project='AnimeGanV2_init_pytorch',
+                                   name='initAnimeGan_{}_{}'.format(config_dict['dataset']['name'],
+                                                                    time.strftime("%Y-%m-%d_%H:%M", time.localtime())))
         trainer = Trainer(
             accelerator='auto',
             max_epochs=config_dict['trainer']['epoch'],
@@ -84,7 +87,9 @@ def main():
                                               save_top_k=-1,
                                               monitor='epoch', mode='max')
         tensorboard_logger = TensorBoardLogger(save_dir='logs/animeGan')
-        wandb_logger = WandbLogger(project='AnimeGanV2_pytorch', name='animeGan')
+        wandb_logger = WandbLogger(project='AnimeGanV2_pytorch',
+                                   name='animeGan_{}_{}'.format(config_dict['dataset']['name'],
+                                                                time.strftime("%Y-%m-%d_%H:%M", time.localtime())))
         trainer = Trainer(
             accelerator='auto',
             max_epochs=config_dict['trainer']['epoch'],
