@@ -62,7 +62,7 @@ if __name__ == '__main__':
     image = Image.open("../dataset/test/test_photo256/0.png")
     image = image.resize((224, 224))
     np_img = np.array(image).astype('float32')
-    np_img = preprocessing(np_img, [224, 224])
+    np_img = preprocessing(np_img)
 
     img = torch.from_numpy(np_img)
     img = img.permute(2, 0, 1)

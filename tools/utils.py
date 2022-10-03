@@ -6,16 +6,16 @@ import numpy as np
 from tools.adjustBrightness import adjust_brightness_from_src_to_dst, read_img
 
 
-def load_test_data(image_path, size):
+def load_test_data(image_path):
     img = cv2.imread(image_path).astype(np.float32)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = preprocessing(img, size)
+    img = preprocessing(img)
     img = np.transpose(img, (2, 0, 1))
     img = np.expand_dims(img, axis=0)
     return img
 
 
-def preprocessing(img, size):
+def preprocessing(img):
     # h, w = img.shape[:2]
     # if h <= size[0]:
     #     h = size[0]

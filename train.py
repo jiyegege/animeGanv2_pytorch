@@ -1,5 +1,6 @@
 import argparse
 
+import torch
 import yaml
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -25,7 +26,7 @@ def parse_args():
     parser.add_argument('--hyperparameters', type=str, default='False')
     parser.add_argument('--pre_train_weight', type=str, required=False,
                         help='pre-trained weight path, tensorflow checkpoint directory')
-    parser.add_argument('--ckpt_path', type=str, required=False, help='checkpoint path')
+    parser.add_argument('--resume_ckpt_path', type=str, required=False, help='resume checkpoint path')
     parser.add_argument('--init_train_flag', type=str, required=True, default='False')
 
     return check_args(parser.parse_args())
@@ -66,7 +67,7 @@ def main():
             max_epochs=config_dict['trainer']['epoch'],
             callbacks=[checkpoint_callback],
             logger=[tensorboard_logger, wandb_logger],
-            precision=16
+
         )
         print()
         print("##### Information #####")
@@ -78,7 +79,8 @@ def main():
         print("#init_lr: ", config_dict['model']['init_lr'])
         print()
     else:
-        model = AnimeGANv2(args.ch, args.n_dis, args.img_size, config_dict['dataset']['name'], **config_dict['model'])
+        model = AnimeGANv2(args.ch, args.n_dis, args.img_size, config_dict['dataset']['name'], args.pre_train_weight,
+                           **config_dict['model'])
         checkpoint_callback = ModelCheckpoint(dirpath=os.path.join('checkpoint/animeGan', config_dict['dataset']['name']),
                                               save_top_k=-1,
                                               monitor='epoch', mode='max')
@@ -89,7 +91,7 @@ def main():
             max_epochs=config_dict['trainer']['epoch'],
             callbacks=[checkpoint_callback],
             logger=[tensorboard_logger, wandb_logger],
-            precision=16
+
         )
         print()
         print("##### Information #####")
@@ -111,14 +113,13 @@ def main():
                                   dataset=config_dict['dataset']['name'],
                                   batch_size=config_dict['dataset']['batch_size'],
                                   num_workers=config_dict['dataset']['num_workers'])
-    if args.pre_train_weight:
-        print("Load from checkpoint:", args.pre_train_weight)
-        model.load_from_checkpoint(args.pre_train_weight, strict=False, **config_dict['model'])
     if args.ckpt_path:
         print("resume from checkpoint:", args.ckpt_path)
         trainer.fit(model, dataModel, ckpt_path=args.ckpt_path)
     else:
         trainer.fit(model, dataModel)
+    model.to_onnx('animeGan.onnx', input_sample=torch.randn(1, 3, 256, 256))
+    torch.save(model.generated.state_dict(), 'animeGan.pth')
     print(" [*] Training finished!")
 
 

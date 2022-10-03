@@ -56,7 +56,7 @@ class AnimeGANInitTrain(pl.LightningModule):
             print('val: ' + str(i) + sample_file)
             self.generated.eval()
             with torch.no_grad():
-                sample_image = np.asarray(load_test_data(sample_file, self.img_size))
+                sample_image = np.asarray(load_test_data(sample_file))
                 test_real = torch.from_numpy(sample_image).type_as(self.generated.out_layer[0].weight)
                 test_generated_predict = self.generated(test_real)
                 test_generated_predict = test_generated_predict.permute(0, 2, 3, 1).cpu().detach().numpy()

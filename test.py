@@ -45,7 +45,7 @@ def test(model_dir, style_name, test_dir, if_adjust_brightness, img_size=[256, 2
 
     # print('Processing image: ' + sample_file)
     sample_file = 'dataset/test/test_photo256/31.png'
-    sample_image = np.asarray(load_test_data(sample_file, img_size))
+    sample_image = np.asarray(load_test_data(sample_file))
     sample_image = torch.Tensor(sample_image)
     image_path = os.path.join(result_dir, '{0}'.format(os.path.basename(sample_file)))
     fake_img = test_generated(sample_image).detach().numpy()

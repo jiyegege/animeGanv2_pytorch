@@ -17,7 +17,7 @@ from tools.utils import *
 # Model
 ##################################################################################
 class AnimeGANv2(pl.LightningModule):
-    def __init__(self, ch=64, n_dis=3, img_size=None, dataset_name=None, **kwargs):
+    def __init__(self, ch=64, n_dis=3, img_size=None, dataset_name=None, pre_trained_ckpt: str = None, **kwargs):
         super().__init__()
         self.save_hyperparameters()
 
@@ -28,6 +28,20 @@ class AnimeGANv2(pl.LightningModule):
         """ Define Generator, Discriminator """
         self.generated = Generator()
         self.discriminator = Discriminator(ch, 3, n_dis, kwargs['sn'])
+        self.pre_trained_ckpt = pre_trained_ckpt
+
+    def setup(self, stage) -> None:
+        if stage == 'fit':
+            if self.pre_trained_ckpt is not None:
+                ckpt = torch.load(self.pre_trained_ckpt, map_location=self.device)
+                generatordict = dict(filter(lambda k: 'generated' in k[0], ckpt['state_dict'].items()))
+                generatordict = {k.split('.', 1)[1]: v for k, v in generatordict.items()}
+                self.generated.load_state_dict(generatordict, True)
+                print('Load pre-trained generator from {}'.format(self.pre_trained_ckpt))
+                del generatordict
+                del ckpt
+        elif stage == 'test':
+            pass
 
     def on_fit_start(self):
         self.p_model.setup(self.device)
@@ -102,7 +116,7 @@ class AnimeGANv2(pl.LightningModule):
             print('val: ' + str(i) + sample_file)
             self.generated.eval()
             with torch.no_grad():
-                sample_image = np.asarray(load_test_data(sample_file, self.img_size))
+                sample_image = np.asarray(load_test_data(sample_file))
                 test_real = torch.from_numpy(sample_image).type_as(self.generated.out_layer[0].weight)
                 test_generated_predict = self.generated(test_real)
                 test_generated_predict = test_generated_predict.permute(0, 2, 3, 1).cpu().detach().numpy()
