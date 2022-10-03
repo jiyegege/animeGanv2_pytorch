@@ -69,11 +69,11 @@ class AnimeGANv2(pl.LightningModule):
                    + self.hparams.real_blur_loss_weight * real_blur_loss
             d_loss = self.hparams.d_adv_weight * loss
 
-            self.log('D_loss', d_loss, on_epoch=False, on_step=True, prog_bar=True, logger=True)
-            self.log('D_real_loss', real_loss, on_epoch=True, on_step=True, prog_bar=False, logger=True)
-            self.log('D_fake_loss', fake_loss, on_epoch=True, on_step=True, prog_bar=False, logger=True)
-            self.log('D_gray_loss', gray_loss, on_epoch=True, on_step=True, prog_bar=False, logger=True)
-            self.log('D_real_blur_loss', real_blur_loss, on_epoch=True, on_step=True, prog_bar=False, logger=True)
+            self.log('D_loss', d_loss, on_step=True, prog_bar=True, logger=True)
+            self.log('D_real_loss', real_loss, on_step=True, prog_bar=False, logger=True)
+            self.log('D_fake_loss', fake_loss, on_step=True, prog_bar=False, logger=True)
+            self.log('D_gray_loss', gray_loss, on_step=True, prog_bar=False, logger=True)
+            self.log('D_real_blur_loss', real_blur_loss, on_step=True, prog_bar=False, logger=True)
             return d_loss
         # train generator
         elif optimizer_idx == 1:
@@ -87,10 +87,10 @@ class AnimeGANv2(pl.LightningModule):
             g_loss = self.hparams.g_adv_weight * generator_loss(generated_logit)
             Generator_loss = t_loss + g_loss
 
-            self.log('G_loss', Generator_loss, on_epoch=False, on_step=True, prog_bar=True)
-            self.log('G_con_loss', c_loss, on_epoch=True, on_step=True, prog_bar=False, logger=True)
-            self.log('G_sty_loss', s_loss, on_epoch=True, on_step=True, prog_bar=False, logger=True)
-            self.log('G_color_loss', col_loss, on_epoch=True, on_step=True, prog_bar=False, logger=True)
+            self.log('G_loss', Generator_loss, on_step=True, prog_bar=True)
+            self.log('G_con_loss', c_loss, on_step=True, prog_bar=False, logger=True)
+            self.log('G_sty_loss', s_loss, on_step=True, prog_bar=False, logger=True)
+            self.log('G_color_loss', col_loss, on_step=True, prog_bar=False, logger=True)
             return Generator_loss
 
     def training_epoch_end(self, batch_parts):

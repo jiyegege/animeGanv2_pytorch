@@ -66,8 +66,7 @@ def main():
             accelerator='auto',
             max_epochs=config_dict['trainer']['epoch'],
             callbacks=[checkpoint_callback],
-            logger=[tensorboard_logger, wandb_logger],
-            precision=16
+            logger=[tensorboard_logger, wandb_logger]
         )
         print()
         print("##### Information #####")
@@ -90,8 +89,7 @@ def main():
             accelerator='auto',
             max_epochs=config_dict['trainer']['epoch'],
             callbacks=[checkpoint_callback],
-            logger=[tensorboard_logger, wandb_logger],
-            precision=16
+            logger=[tensorboard_logger, wandb_logger]
         )
         print()
         print("##### Information #####")
@@ -113,9 +111,9 @@ def main():
                                   dataset=config_dict['dataset']['name'],
                                   batch_size=config_dict['dataset']['batch_size'],
                                   num_workers=config_dict['dataset']['num_workers'])
-    if args.ckpt_path:
-        print("resume from checkpoint:", args.ckpt_path)
-        trainer.fit(model, dataModel, ckpt_path=args.ckpt_path)
+    if args.resume_ckpt_path:
+        print("resume from checkpoint:", args.resume_ckpt_path)
+        trainer.fit(model, dataModel, ckpt_path=args.resume_ckpt_path)
     else:
         trainer.fit(model, dataModel)
     model.to_onnx('animeGan.onnx', input_sample=torch.randn(1, 3, 256, 256))
