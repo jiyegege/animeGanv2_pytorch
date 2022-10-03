@@ -40,13 +40,8 @@ class AnimeGANInitTrain(pl.LightningModule):
         init_c_loss = con_loss(self.p_model, real, generator_images)
         init_loss = self.hparams.con_weight * init_c_loss
 
-        log_dict = {'init_loss': init_loss.item()}
-        output = OrderedDict({
-            'loss': init_loss,
-            'log': log_dict
-        })
         self.log('init_loss', init_loss, on_step=True, prog_bar=True, logger=True)
-        return output
+        return init_loss
 
     def on_fit_end(self) -> None:
         # log epoch images to wandb
@@ -55,22 +50,16 @@ class AnimeGANInitTrain(pl.LightningModule):
         for i, sample_file in enumerate(val_files):
             print('val: ' + str(i) + sample_file)
             self.generated.eval()
-            with torch.no_grad():
-                sample_image = np.asarray(load_test_data(sample_file))
-                test_real = torch.from_numpy(sample_image).type_as(self.generated.out_layer[0].weight)
-                test_generated_predict = self.generated(test_real)
-                test_generated_predict = test_generated_predict.permute(0, 2, 3, 1).cpu().detach().numpy()
-                test_generated_predict = np.squeeze(test_generated_predict, axis=0)
-                if i == 0 or i == 26 or i == 5:
+            if i == 0 or i == 26 or i == 5:
+                with torch.no_grad():
+                    sample_image = np.asarray(load_test_data(sample_file))
+                    test_real = torch.from_numpy(sample_image).type_as(self.generated.out_layer[0].weight)
+                    test_generated_predict = self.generated(test_real)
+                    test_generated_predict = test_generated_predict.permute(0, 2, 3, 1).cpu().detach().numpy()
+                    test_generated_predict = np.squeeze(test_generated_predict, axis=0)
                     val_images.append(
                         wandb.Image(test_generated_predict, caption="Name:{}, epoch:{}".format(i, self.current_epoch)))
         wandb.log({"val_images": val_images})
-
-    def training_epoch_end(self, batch_parts):
-        # log epoch metrics to wandb
-        log_dict = batch_parts[len(batch_parts) - 1]
-        for key, value in log_dict['log'].items():
-            wandb.log({key: value})
 
     def configure_optimizers(self):
         G_optim = Adam(self.generated.parameters(), lr=self.hparams.init_lr, betas=(0.5, 0.999))

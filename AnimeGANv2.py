@@ -69,16 +69,12 @@ class AnimeGANv2(pl.LightningModule):
                    + self.hparams.real_blur_loss_weight * real_blur_loss
             d_loss = self.hparams.d_adv_weight * loss
 
-            log_dict = {'Discriminator_loss': d_loss.item(), 'Discriminator_real_loss': real_loss.item(),
-                        'Discriminator_fake_loss': fake_loss.item(),
-                        'Discriminator_gray_loss': gray_loss.item(),
-                        'Discriminator_real_blur_loss': real_blur_loss.item()}
             self.log('D_loss', d_loss, on_epoch=False, on_step=True, prog_bar=True, logger=True)
-            output = OrderedDict({
-                'loss': d_loss,
-                'log': log_dict
-            })
-            return output
+            self.log('D_real_loss', real_loss, on_epoch=True, on_step=True, prog_bar=False, logger=True)
+            self.log('D_fake_loss', fake_loss, on_epoch=True, on_step=True, prog_bar=False, logger=True)
+            self.log('D_gray_loss', gray_loss, on_epoch=True, on_step=True, prog_bar=False, logger=True)
+            self.log('D_real_blur_loss', real_blur_loss, on_epoch=True, on_step=True, prog_bar=False, logger=True)
+            return d_loss
         # train generator
         elif optimizer_idx == 1:
             c_loss, s_loss = con_sty_loss(self.p_model, real, anime_gray, fake_image)
@@ -91,37 +87,26 @@ class AnimeGANv2(pl.LightningModule):
             g_loss = self.hparams.g_adv_weight * generator_loss(generated_logit)
             Generator_loss = t_loss + g_loss
 
-            log_dict = {'Generator_loss': Generator_loss.item(),
-                        'Generator_con_loss': c_loss.item(),
-                        'Generator_sty_loss': s_loss.item(),
-                        'Generator_color_loss': col_loss.item()}
             self.log('G_loss', Generator_loss, on_epoch=False, on_step=True, prog_bar=True)
-            output = OrderedDict({
-                'loss': Generator_loss,
-                'log': log_dict
-            })
-            return output
+            self.log('G_con_loss', c_loss, on_epoch=True, on_step=True, prog_bar=False, logger=True)
+            self.log('G_sty_loss', s_loss, on_epoch=True, on_step=True, prog_bar=False, logger=True)
+            self.log('G_color_loss', col_loss, on_epoch=True, on_step=True, prog_bar=False, logger=True)
+            return Generator_loss
 
     def training_epoch_end(self, batch_parts):
-        # log epoch metrics to wandb
-        log_dict = batch_parts[len(batch_parts) - 1]
-        for item in log_dict:
-            for key, value in item['log'].items():
-                wandb.log({key: value})
-
         # log epoch images to wandb
         val_files = glob('./dataset/{}/*.*'.format('val'))
         val_images = []
         for i, sample_file in enumerate(val_files):
             print('val: ' + str(i) + sample_file)
             self.generated.eval()
-            with torch.no_grad():
-                sample_image = np.asarray(load_test_data(sample_file))
-                test_real = torch.from_numpy(sample_image).type_as(self.generated.out_layer[0].weight)
-                test_generated_predict = self.generated(test_real)
-                test_generated_predict = test_generated_predict.permute(0, 2, 3, 1).cpu().detach().numpy()
-                test_generated_predict = np.squeeze(test_generated_predict, axis=0)
-                if i == 0 or i == 26 or i == 5:
+            if i == 0 or i == 26 or i == 5:
+                with torch.no_grad():
+                    sample_image = np.asarray(load_test_data(sample_file))
+                    test_real = torch.from_numpy(sample_image).type_as(self.generated.out_layer[0].weight)
+                    test_generated_predict = self.generated(test_real)
+                    test_generated_predict = test_generated_predict.permute(0, 2, 3, 1).cpu().detach().numpy()
+                    test_generated_predict = np.squeeze(test_generated_predict, axis=0)
                     val_images.append(
                         wandb.Image(test_generated_predict,
                                     caption="Name:{}, epoch:{}".format(i, self.current_epoch + 10)))
