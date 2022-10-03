@@ -67,7 +67,7 @@ def main():
             max_epochs=config_dict['trainer']['epoch'],
             callbacks=[checkpoint_callback],
             logger=[tensorboard_logger, wandb_logger],
-
+            precision=16
         )
         print()
         print("##### Information #####")
@@ -91,7 +91,7 @@ def main():
             max_epochs=config_dict['trainer']['epoch'],
             callbacks=[checkpoint_callback],
             logger=[tensorboard_logger, wandb_logger],
-
+            precision=16
         )
         print()
         print("##### Information #####")
