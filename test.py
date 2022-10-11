@@ -10,6 +10,7 @@ from net.generator import Generator
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+
 def parse_args():
     desc = "AnimeGANv2"
     parser = argparse.ArgumentParser(description=desc)
@@ -20,8 +21,10 @@ def parse_args():
                         help='Directory name of test photos')
     parser.add_argument('--save_dir', type=str, default='Shinkai/t',
                         help='what style you want to get')
-    parser.add_argument('--if_adjust_brightness', type=bool, default=True,
+    parser.add_argument('--if_adjust_brightness', action='store_true',
                         help='adjust brightness by the real photo')
+    parser.add_argument('--test_file_path', type=str, default=None,
+                        help='test file path')
 
     """checking arguments"""
 
@@ -29,35 +32,48 @@ def parse_args():
 
 
 def load_model(model_dir):
-    model = torch.load(model_dir, map_location=device)
+    """
+    load model from checkpoint
+    Args:
+        model_dir: checkpoint directory
+
+    Returns: model
+
+    """
+    ckpt = torch.load(model_dir, map_location=device)
+    generated = Generator()
+    generatordict = dict(filter(lambda k: 'generated' in k[0], ckpt['state_dict'].items()))
+    generatordict = {k.split('.', 1)[1]: v for k, v in generatordict.items()}
+    generated.load_state_dict(generatordict, True)
     # model.summary()
-    return model
+    generated.eval()
+    del generatordict
+    del ckpt
+    return generated
 
 
-def test(model_dir, style_name, test_dir, if_adjust_brightness, img_size=[256, 256]):
+def test(model_dir, style_name, test_file_path, if_adjust_brightness):
     # tf.reset_default_graph()
     result_dir = 'results/' + style_name
     check_folder(result_dir)
 
-    test_generated = load_model(model_dir)
-
-    # stats_graph(tf.get_default_graph())
-
+    generated = load_model(model_dir)
     # print('Processing image: ' + sample_file)
-    sample_file = 'dataset/test/test_photo256/31.png'
-    sample_image = np.asarray(load_test_data(sample_file))
+
+    sample_image = np.asarray(load_test_data(test_file_path))
     sample_image = torch.Tensor(sample_image)
-    image_path = os.path.join(result_dir, '{0}'.format(os.path.basename(sample_file)))
-    fake_img = test_generated(sample_image).detach().numpy()
+    image_path = os.path.join(result_dir, '{0}'.format(os.path.basename(test_file_path)))
+    fake_img = generated(sample_image).detach().numpy()
     fake_img = np.squeeze(fake_img, axis=0)
     fake_img = np.transpose(fake_img, (1, 2, 0))
     if if_adjust_brightness:
-        save_images(fake_img, image_path, sample_file)
+        save_images(fake_img, image_path, test_file_path)
     else:
         save_images(fake_img, image_path, None)
+    print('Saved image: ' + image_path)
 
 
 if __name__ == '__main__':
     arg = parse_args()
     print(arg.model_dir)
-    test(arg.model_dir, arg.save_dir, arg.test_dir, arg.if_adjust_brightness)
+    test(arg.model_dir, arg.save_dir, arg.test_file_path, arg.if_adjust_brightness)
