@@ -24,7 +24,6 @@ def parse_args():
     parser.add_argument('--img_ch', type=int, default=3, help='The size of image channel')
     parser.add_argument('--ch', type=int, default=64, help='base channel number per layer')
     parser.add_argument('--n_dis', type=int, default=3, help='The number of discriminator layer')
-    parser.add_argument('--hyperparameters', type=str, default='False')
     parser.add_argument('--pre_train_weight', type=str, required=False,
                         help='pre-trained weight path, tensorflow checkpoint directory')
     parser.add_argument('--resume_ckpt_path', type=str, required=False, help='resume checkpoint path')
