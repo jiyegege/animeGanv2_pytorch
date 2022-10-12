@@ -44,6 +44,18 @@ def export_to_pytorch_model(model: AnimeGANv2):
     """
     torch.save(model.generated, 'save_model/pytorch/animeGan.pth')
 
+def export_to_torchscript_model(model: AnimeGANv2):
+    """
+    Export the model to TorchScript model format
+    Args:
+        model: The model to be exported
+
+    Returns:
+        None
+    """
+    traced_script_module = torch.jit.script(model.generated)
+    traced_script_module.save('save_model/torchscript/animeGan.pt')
+
 
 def pase_args():
     """
@@ -57,6 +69,7 @@ def pase_args():
     parser.add_argument('--onnx', action='store_true', help='Export to ONNX format')
     parser.add_argument('--pytorch', action='store_true', help='Export to PyTorch model format')
     parser.add_argument('--dynamic', action='store_true', help='Export to ONNX format with dynamic input')
+    parser.add_argument('--torchscript', action='store_true', help='Export to TorchScript model format')
     args = parser.parse_args()
     return args
 
@@ -74,3 +87,6 @@ if __name__ == '__main__':
     if args.dynamic:
         export_to_onnx_with_dynamic_input(model, input_sample)
         print('Export to ONNX format with dynamic input successfully')
+    if args.torchscript:
+        export_to_torchscript_model(model)
+        print('Export to TorchScript model format successfully')

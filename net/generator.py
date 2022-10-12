@@ -53,13 +53,13 @@ class Generator(nn.Module):
         if align_corners:
             out = F.interpolate(out, half_size, mode="bilinear", align_corners=True)
         else:
-            out = F.interpolate(out, scale_factor=2, mode="bilinear", align_corners=False)
+            out = F.interpolate(out, scale_factor=2.0, mode="bilinear", align_corners=False)
         out = self.block_d(out)
 
         if align_corners:
             out = F.interpolate(out, input.size()[-2:], mode="bilinear", align_corners=True)
         else:
-            out = F.interpolate(out, scale_factor=2, mode="bilinear", align_corners=False)
+            out = F.interpolate(out, scale_factor=2.0, mode="bilinear", align_corners=False)
         out = self.block_e(out)
 
         out = self.out_layer(out)

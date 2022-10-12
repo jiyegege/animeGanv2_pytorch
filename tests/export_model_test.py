@@ -48,6 +48,21 @@ class MyTestCase(unittest.TestCase):
         plt.imshow(test_generated_predict)
         plt.show()
 
+    def test_script_model(self):
+        model = torch.jit.load("../save_model/torchscript/animeGan.pt")
+        model.eval()
+
+        sample_image = np.asarray(load_test_data("../dataset/test/HR_photo/1 (1).jpg"))
+        sample_image = torch.Tensor(sample_image)
+        gerated_predict = model(sample_image)
+        gerated_predict = gerated_predict.permute(0, 2, 3, 1).cpu().detach().numpy()
+        test_generated_predict = np.squeeze(gerated_predict, axis=0)
+        test_generated_predict = (test_generated_predict + 1.) / 2 * 255
+        test_generated_predict = np.clip(test_generated_predict, 0, 255).astype(np.uint8)
+        test_generated_predict = cv2.cvtColor(test_generated_predict, cv2.COLOR_BGR2RGB)
+        plt.imshow(test_generated_predict)
+        plt.show()
+
 
 if __name__ == '__main__':
     unittest.main()
