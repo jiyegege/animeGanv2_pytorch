@@ -37,8 +37,14 @@ class AnimeGANv2(pl.LightningModule):
                 generatordict = dict(filter(lambda k: 'generated' in k[0], ckpt['state_dict'].items()))
                 generatordict = {k.split('.', 1)[1]: v for k, v in generatordict.items()}
                 self.generated.load_state_dict(generatordict, True)
+
+                discriminatordict = dict(filter(lambda k: 'discriminator' in k[0], ckpt['state_dict'].items()))
+                if len(discriminatordict) > 0:
+                    discriminatordict = {k.split('.', 1)[1]: v for k, v in discriminatordict.items()}
+                    self.discriminator.load_state_dict(discriminatordict, True)
                 print('Load pre-trained generator from {}'.format(self.pre_trained_ckpt))
                 del generatordict
+                del discriminatordict
                 del ckpt
         elif stage == 'test':
             pass
