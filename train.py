@@ -55,20 +55,22 @@ def main():
     config_dict = yaml.safe_load(open(args.config_path, 'r'))
     if args.init_train_flag.lower() == 'true':
         model = AnimeGANInitTrain(args.img_size, config_dict['dataset']['name'], **config_dict['model'])
-        check_folder(os.path.join('checkpoint/initAnimeGan', config_dict['dataset']['name']))
-        checkpoint_callback = ModelCheckpoint(dirpath=os.path.join('checkpoint/initAnimeGan', config_dict['dataset']['name']),
+        check_folder(os.path.join('checkpoint_bf16/initAnimeGan', config_dict['dataset']['name']))
+        checkpoint_callback = ModelCheckpoint(dirpath=os.path.join('checkpoint_bf16/initAnimeGan', config_dict['dataset']['name']),
                                               monitor='epoch',
                                               mode='max',
                                               save_top_k=-1)
-        tensorboard_logger = TensorBoardLogger(save_dir='logs/initAnimeGan')
-        wandb_logger = WandbLogger(project='AnimeGanV2_init_pytorch',
+        tensorboard_logger = TensorBoardLogger(save_dir='logs_bf16/initAnimeGan')
+        wandb_logger = WandbLogger(project='AnimeGanV2_init_pytorch_bf16',
                                    name='initAnimeGan_{}_{}'.format(config_dict['dataset']['name'],
                                                                     time.strftime("%Y-%m-%d_%H:%M", time.localtime())))
         trainer = Trainer(
             accelerator='auto',
             max_epochs=config_dict['trainer']['epoch'],
             callbacks=[checkpoint_callback],
-            logger=[tensorboard_logger, wandb_logger]
+            logger=[tensorboard_logger, wandb_logger],
+            precision="bf16",
+            amp_backend="native"
         )
         print()
         print("##### Information #####")
@@ -82,18 +84,20 @@ def main():
     else:
         model = AnimeGANv2(args.ch, args.n_dis, args.img_size, config_dict['dataset']['name'], args.pre_train_weight,
                            **config_dict['model'])
-        checkpoint_callback = ModelCheckpoint(dirpath=os.path.join('checkpoint/animeGan', config_dict['dataset']['name']),
+        checkpoint_callback = ModelCheckpoint(dirpath=os.path.join('checkpoint_bf16/animeGan', config_dict['dataset']['name']),
                                               save_top_k=-1,
                                               monitor='epoch', mode='max')
-        tensorboard_logger = TensorBoardLogger(save_dir='logs/animeGan')
-        wandb_logger = WandbLogger(project='AnimeGanV2_pytorch',
+        tensorboard_logger = TensorBoardLogger(save_dir='logs_bf16/animeGan')
+        wandb_logger = WandbLogger(project='AnimeGanV2_pytorch_bf16',
                                    name='animeGan_{}_{}'.format(config_dict['dataset']['name'],
                                                                 time.strftime("%Y-%m-%d_%H:%M", time.localtime())))
         trainer = Trainer(
             accelerator='auto',
             max_epochs=config_dict['trainer']['epoch'],
             callbacks=[checkpoint_callback],
-            logger=[tensorboard_logger, wandb_logger]
+            logger=[tensorboard_logger, wandb_logger],
+            precision="bf16",
+            amp_backend="native"
         )
         print()
         print("##### Information #####")
@@ -120,8 +124,8 @@ def main():
         trainer.fit(model, dataModel, ckpt_path=args.resume_ckpt_path)
     else:
         trainer.fit(model, dataModel)
-    model.to_onnx('animeGan.onnx', input_sample=torch.randn(1, 3, 256, 256))
-    torch.save(model.generated.state_dict(), 'animeGan.pth')
+    model.to_onnx('animeGan_bf16.onnx', input_sample=torch.randn(1, 3, 256, 256))
+    torch.save(model.generated.state_dict(), 'animeGan_bf16.pth')
     print(" [*] Training finished!")
 
 
