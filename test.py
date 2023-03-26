@@ -17,10 +17,6 @@ def parse_args():
 
     parser.add_argument('--model_dir', type=str, default='save_model/' + 'generated_Hayao.pth',
                         help='Directory name to save the checkpoints')
-    parser.add_argument('--test_dir', type=str, default='dataset/test/t',
-                        help='Directory name of test photos')
-    parser.add_argument('--save_dir', type=str, default='Shinkai/t',
-                        help='what style you want to get')
     parser.add_argument('--if_adjust_brightness', action='store_true',
                         help='adjust brightness by the real photo')
     parser.add_argument('--test_file_path', type=str, default=None,
@@ -52,9 +48,9 @@ def load_model(model_dir):
     return generated
 
 
-def test(model_dir, style_name, test_file_path, if_adjust_brightness):
+def test(model_dir, test_file_path, if_adjust_brightness):
     # tf.reset_default_graph()
-    result_dir = 'results/' + style_name
+    result_dir = 'results'
     check_folder(result_dir)
 
     generated = load_model(model_dir)
@@ -76,4 +72,4 @@ def test(model_dir, style_name, test_file_path, if_adjust_brightness):
 if __name__ == '__main__':
     arg = parse_args()
     print(arg.model_dir)
-    test(arg.model_dir, arg.save_dir, arg.test_file_path, arg.if_adjust_brightness)
+    test(arg.model_dir, arg.test_file_path, arg.if_adjust_brightness)

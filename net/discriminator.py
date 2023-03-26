@@ -18,14 +18,14 @@ class Discriminator(nn.Module):
             self.listLayer.append(nn.LeakyReLU(0.2, inplace=True))
 
             self.listLayer.append(ConvSN(channel*2, channel*4, kernel_size=3, stride=1, padding=1, sn=sn, use_bias=False))
-            self.listLayer.append(nn.GroupNorm(num_groups=1, num_channels=channel*4, affine=True))
+            self.listLayer.append(nn.InstanceNorm2d(channel*4, affine=True))
             self.listLayer.append(nn.LeakyReLU(0.2, inplace=True))
 
             in_channel = channel * 4
             channel = channel * 2
         self.listLayer = nn.ModuleList(self.listLayer)
         self.conv2 = ConvSN(in_channel, channel*2, kernel_size=3, stride=1, padding=1, sn=sn, use_bias=False)
-        self.layernorm = nn.GroupNorm(num_groups=1, num_channels=channel*2, affine=True)
+        self.layernorm = nn.InstanceNorm2d(channel*2, affine=True)
         self.lrelu2 = nn.LeakyReLU(0.2, inplace=True)
 
         self.conv3 = ConvSN(channel*2, out_ch, kernel_size=3, stride=1, padding=1, sn=sn, use_bias=False)

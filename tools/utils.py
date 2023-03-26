@@ -29,7 +29,7 @@ def preprocessing(img):
     #     y = w % 32
     #     w = w - y
     # # the cv2 resize func : dsize format is (W ,H)
-    # img = cv2.resize(img, (w, h))
+    # img = cv2.resize(img, (256, 256))
     return img / 127.5 - 1.0
 
 

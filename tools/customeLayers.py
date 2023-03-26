@@ -15,7 +15,7 @@ class ConvNormLReLU(nn.Module):
 
         self.pad = pad_layer[pad_mode](padding)
         self.conv = nn.Conv2d(in_ch, out_ch, kernel_size=kernel_size, stride=stride, padding=0, groups=groups, bias=bias)
-        self.norm = nn.GroupNorm(num_groups=1, num_channels=out_ch, affine=True)
+        self.norm = nn.InstanceNorm2d(out_ch, affine=True)
         self.relu = nn.LeakyReLU(0.2, inplace=True)
 
     def forward(self, input):
@@ -40,7 +40,7 @@ class InvertedResBlock(nn.Module):
         layers.append(ConvNormLReLU(bottleneck, bottleneck, groups=bottleneck, bias=True))
         # pw
         layers.append(nn.Conv2d(bottleneck, out_ch, kernel_size=1, padding=0, bias=False))
-        layers.append(nn.GroupNorm(num_groups=1, num_channels=out_ch, affine=True))
+        layers.append(nn.InstanceNorm2d(out_ch, affine=True))
 
         self.layers = nn.Sequential(*layers)
 

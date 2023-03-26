@@ -8,6 +8,7 @@ import torch
 from tools.utils import *
 from matplotlib import pyplot as plt
 import cv2
+import coremltools as ct
 
 
 class MyTestCase(unittest.TestCase):
@@ -59,6 +60,19 @@ class MyTestCase(unittest.TestCase):
         test_generated_predict = np.squeeze(gerated_predict, axis=0)
         test_generated_predict = (test_generated_predict + 1.) / 2 * 255
         test_generated_predict = np.clip(test_generated_predict, 0, 255).astype(np.uint8)
+        test_generated_predict = cv2.cvtColor(test_generated_predict, cv2.COLOR_BGR2RGB)
+        plt.imshow(test_generated_predict)
+        plt.show()
+
+    def test_coreml_model(self):
+        model = ct.models.MLModel("../save_model/coreml/animeGan.mlmodel")
+        sample_image = load_test_data("../dataset/test/HR_photo/1 (1).jpg")
+        predictions = model.predict({"input": np.asarray(sample_image)})
+        img_out_y = predictions["output"]
+        test_generated_predict = np.squeeze(img_out_y, axis=0)
+        test_generated_predict = (test_generated_predict + 1.) / 2 * 255
+        test_generated_predict = np.clip(test_generated_predict, 0, 255).astype(np.uint8)
+        test_generated_predict = np.transpose(test_generated_predict, (1, 2, 0))
         test_generated_predict = cv2.cvtColor(test_generated_predict, cv2.COLOR_BGR2RGB)
         plt.imshow(test_generated_predict)
         plt.show()

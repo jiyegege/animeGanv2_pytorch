@@ -44,22 +44,15 @@ class Generator(nn.Module):
             nn.Tanh()
         )
 
-    def forward(self, input, align_corners=True):
+    def forward(self, input):
         out = self.block_a(input)
         half_size = out.size()[-2:]
         out = self.block_b(out)
         out = self.block_c(out)
 
-        if align_corners:
-            out = F.interpolate(out, half_size, mode="bilinear", align_corners=True)
-        else:
-            out = F.interpolate(out, scale_factor=2.0, mode="bilinear", align_corners=False)
+        out = F.interpolate(out, half_size, mode="bilinear", align_corners=True)
         out = self.block_d(out)
-
-        if align_corners:
-            out = F.interpolate(out, input.size()[-2:], mode="bilinear", align_corners=True)
-        else:
-            out = F.interpolate(out, scale_factor=2.0, mode="bilinear", align_corners=False)
+        out = F.interpolate(out, input.size()[-2:], mode="bilinear", align_corners=True)
         out = self.block_e(out)
 
         out = self.out_layer(out)
